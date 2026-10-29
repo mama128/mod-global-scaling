@@ -176,7 +176,7 @@ GlobalScaling.Rank.Trigger.DoT = 1.0
 # identified by its Entry ID, regardless of its zone.
 # Format: "EntryID BaseLvl HP Mana Dmg Spell Armor Res Gold Heal DoT"
 # Example: Adjust a specific boss (e.g., ID 18728) :
-GlobalScaling.CustomCreatures = "18728 83 25.0 10.0 2.5 2.5 1.0 1.0 5.0 1.5 1.5,17711 83 28.0 10.0 2.6 2.6 1.0 1.0 5.0 1.5 1.5,6109 83 22.0 10.0 2.2 2.2 1.0 1.0 5.0 1.5 1.5,18338 83 22.0 10.0 2.2 2.2 1.0 1.0 5.0 1.5 1.5,14887 83 24.0 10.0 2.4 2.4 1.0 1.0 5.0 1.5 1.5,14888 83 24.0 10.0 2.4 2.4 1.0 1.0 5.0 1.5 1.5,14889 83 24.0 10.0 2.4 2.4 1.0 1.0 5.0 1.5 1.5,14890 83 24.0 10.0 2.4 2.4 1.0 1.0 5.0 1.5 1.5"
+GlobalScaling.CustomCreatures = "18728 83 40.0 10.0 2.5 2.5 1.0 1.0 5.0 1.5 1.5,17711 83 24.0 10.0 2.6 2.6 1.0 1.0 5.0 1.5 1.5,6109 83 26.0 10.0 2.2 2.2 1.0 1.0 5.0 1.5 1.5,18338 83 22.0 10.0 2.2 2.2 1.0 1.0 5.0 1.5 1.5,14887 83 16.0 10.0 2.4 2.4 1.0 1.0 5.0 1.5 1.5,14888 83 16.0 10.0 2.4 2.4 1.0 1.0 5.0 1.5 1.5,14889 83 16.0 10.0 2.4 2.4 1.0 1.0 5.0 1.5 1.5,14890 83 16.0 10.0 2.4 2.4 1.0 1.0 5.0 1.5 1.5"
 # 2. GlobalScaling.CustomHealingSpells
 # Description: Allows applying an exception multiplier to a specific direct 
 # healing spell cast by an NPC (based on Spell ID).
