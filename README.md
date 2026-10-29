@@ -73,6 +73,24 @@ The module provides the `.gscaling` command suite:
 
 ---
 
+## 🖼️ Showcase
+
+<img width="3686" height="1944" alt="Sans titreaaAAAAAAAAAA" src="https://github.com/user-attachments/assets/954379ee-40b4-47da-a316-eacda42aca72" />
+<img width="3686" height="1944" alt="Sans titreaaAAAAAAAAA" src="https://github.com/user-attachments/assets/70fedfdf-2dda-45ce-9de3-f3a4ba56066e" />
+<img width="4096" height="2160" alt="Sans titreaaAAAAAAAA" src="https://github.com/user-attachments/assets/43590c36-2297-4594-84b2-02e3898f2874" />
+<img width="4096" height="2160" alt="Sans titreaaAAAAAAA" src="https://github.com/user-attachments/assets/6c251d50-741c-4b09-a8e1-6e87ec244e3e" />
+<img width="4096" height="2160" alt="Sans titreaaAAAAAA" src="https://github.com/user-attachments/assets/5789ed63-c535-4e37-bcaf-d8caf4c5a29e" />
+<img width="4096" height="2160" alt="Sans titreaaAAAAA" src="https://github.com/user-attachments/assets/281b62f0-15a9-4c08-b901-d47d18b90496" />
+<img width="4096" height="2160" alt="Sans titreaaAAAA" src="https://github.com/user-attachments/assets/77acdc83-a4cf-45cb-aa04-09cec617855c" />
+<img width="4096" height="2160" alt="Sans titreaaAAA" src="https://github.com/user-attachments/assets/a9d464a3-4e29-4f30-971d-01858a76077c" />
+<img width="4096" height="2160" alt="Sans titreaaAA" src="https://github.com/user-attachments/assets/fe432ef6-88f1-4b52-b691-96ada974bb97" />
+<img width="4096" height="2160" alt="Sans titreaaA" src="https://github.com/user-attachments/assets/0246788e-6d81-46af-b097-567ee0b3c8cf" />
+<img width="4096" height="2160" alt="Sans titreaa" src="https://github.com/user-attachments/assets/b9133bc2-6ca6-4de9-805d-1ab0c2431746" />
+<img width="4096" height="2160" alt="Sans titrea" src="https://github.com/user-attachments/assets/d38b7734-d36f-41d5-8f79-d984c6c3fdab" />
+
+
+---
+
 ## ⚙️ Installation
 
 1. Clone or copy the `mod-global-scaling` folder into your AzerothCore `modules/` directory:
