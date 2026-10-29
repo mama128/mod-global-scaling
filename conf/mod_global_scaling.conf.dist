@@ -211,17 +211,17 @@ GlobalScaling.CustomShieldSpells = ""
 GlobalScaling.CustomMeleeSpells = ""
 
 # 6. GlobalScaling.SizeOverride.Maps
-# Description: Multiplie la taille visuelle des monstres par instance (MapID), avec une distinction Boss / Trash.
+# Description: Multiplies the visual size of creatures per instance (MapID), distinguishing between Bosses and Trash.
 # Format: "MapID TrashScale BossScale,MapID2 TrashScale2 BossScale2"
-# Example: Dans le Gouffre de Ragefeu (389), les trashs sont normaux (1.0) mais les Boss sont doublés (2.0) :
+# Example: In Ragefire Chasm (389), trash scale is normal (1.0) but bosses are doubled (2.0) :
 # GlobalScaling.SizeOverride.Maps = "389 1.0 2.0"
 GlobalScaling.SizeOverride.Maps = "389 1.5 2.5,36 1 2"
 
 # 7. GlobalScaling.SizeOverride.Creatures
-# Description: Multiplie la taille visuelle d'un monstre ou boss spécifique (EntryID).
-# Prioritaire sur le réglage par carte.
-# Format: "EntryID Multiplicateur,EntryID2 Multiplicateur2"
-# Example: Doubler la taille de Taragaman l'Affameur (ID 11520) :
+# Description: Multiplies the visual size of a specific creature or boss (EntryID).
+# Takes priority over map settings.
+# Format: "EntryID Multiplier,EntryID2 Multiplier2"
+# Example: Double the size of Taragaman the Hungerer (ID 11520) :
 # GlobalScaling.SizeOverride.Creatures = "11520 2.0"
 GlobalScaling.SizeOverride.Creatures = "2754 2.0,2753 2.0"
 		
