@@ -54,7 +54,7 @@ Every single dungeon and raid map ID in Vanilla, TBC, and WotLK is pre-configure
 Fine-tune specific encounters without recompiling:
 * **`GlobalScaling.CustomCreatures`:** Override Base Level, HP, Mana, Melee, Spell, Armor, Resistance, Gold, Heal, and DoT multipliers for specific NPC Entry IDs.
 * **Spell Overrides (`CustomDamageSpells`, `CustomHealingSpells`, `CustomShieldSpells`, `CustomMeleeSpells`):** Apply custom multipliers to specific Spell IDs (e.g., *Shield Slam* or specific boss abilities that don't scale natively with Attack Power).
-* **Visual Size Overrides (`SizeOverride.Maps` & `SizeOverride.Creatures`):** Multiply the visual model scale (`OBJECT_FIELD_SCALE_X`) of bosses and trash per instance or per creature Entry ID.
+* **Visual Size Overrides (`SizeOverride.Maps` & `SizeOverride.Creatures`):** Multiplies the visual model scale (`OBJECT_FIELD_SCALE_X`) of trash mobs and bosses per instance (`MapID`) or per specific creature (`EntryID`). In vanilla World of Warcraft, low-level dungeons (such as *Ragefire Chasm* or *The Deadmines*) natively feature much smaller creature and boss models compared to high-level endgame instances. This setting lets you scale up their physical presence so they look as intimidating as their new Level 80 endgame stats, while allowing specific `EntryID` overrides to take priority over map-wide settings.
 
 ---
 
