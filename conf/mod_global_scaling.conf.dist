@@ -211,20 +211,32 @@ GlobalScaling.CustomShieldSpells = ""
 # GlobalScaling.CustomMeleeSpells = "8242 3.0"
 GlobalScaling.CustomMeleeSpells = ""
 
-# 6. GlobalScaling.SizeOverride.Maps
-# Description: Multiplies the visual size of creatures per instance (MapID), distinguishing between Bosses and Trash.
+# ==============================================================================
+# VISUAL SIZE OVERRIDES (MAPS & OVERWORLD)
+# ==============================================================================
+
+# 1. Overworld Size Overrides (Enable / Disable switch)
+GlobalScaling.SizeOverride.Overworld.Enable = 0
+# Description: Multiplies the visual size of overworld creatures per continent map ID across 5 distinct ranks.
+# Format: "MapID TrashScale EliteScale EliteRareScale RareScale SkullBossScale,MapID2 ..."
+# Map IDs: 0 = Eastern Kingdoms, 1 = Kalimdor, 530 = Outland / Bloodelves Zones / Draeneis Zones , 571 = Northrend
+GlobalScaling.SizeOverride.Overworld = "0 1.5 2.0 2.0 2.0 2.5, 1 1.5 2.0 2.0 2.0 2.5, 530 1.5 2.0 2.0 2.0 2.5, 571 1.5 2.0 2.0 2.0 2.5"
+
+# 2. Instances & Dungeons/Raids Size Overrides (Enable / Disable switch)
+GlobalScaling.SizeOverride.Maps.Enable = 1
+# Description: Multiplies the visual size of creatures per instance (MapID), distinguishing between Trash and Bosses.
 # Format: "MapID TrashScale BossScale,MapID2 TrashScale2 BossScale2"
 # Example: In Ragefire Chasm (389), trash scale is normal (1.0) but bosses are doubled (2.0) :
 # GlobalScaling.SizeOverride.Maps = "389 1.0 2.0"
-GlobalScaling.SizeOverride.Maps = "389 1.5 2.5,36 1 2"
+GlobalScaling.SizeOverride.Maps = "389 1.5 2.5, 36 1 2"
 
-# 7. GlobalScaling.SizeOverride.Creatures
+# 3. GlobalScaling.SizeOverride.Creatures
 # Description: Multiplies the visual size of a specific creature or boss (EntryID).
-# Takes priority over map settings.
+# Takes priority over map and overworld settings.
 # Format: "EntryID Multiplier,EntryID2 Multiplier2"
 # Example: Double the size of Taragaman the Hungerer (ID 11520) :
 # GlobalScaling.SizeOverride.Creatures = "11520 2.0"
-GlobalScaling.SizeOverride.Creatures = "2754 2.0,2753 2.0"
+GlobalScaling.SizeOverride.Creatures = "2754 2.0, 2753 2.0"
 		
 # ==============================================================================
 # VANILLA DUNGEONS CONFIGURATION (COMPLETE LIST)
