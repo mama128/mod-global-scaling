@@ -264,30 +264,30 @@ namespace GlobalScaleConfig
 
         ExpansionExponents[0] = {
             sConfigMgr->GetOption<float>("GlobalScaling.Exponent.Vanilla.HP", 2.05f),
-            sConfigMgr->GetOption<float>("GlobalScaling.Exponent.Vanilla.Mana", 1.80f),
-            sConfigMgr->GetOption<float>("GlobalScaling.Exponent.Vanilla.Damage", 1.95f),
-            sConfigMgr->GetOption<float>("GlobalScaling.Exponent.Vanilla.Spell", 1.35f),
-            sConfigMgr->GetOption<float>("GlobalScaling.Exponent.Vanilla.Armor", 1.65f),
-            sConfigMgr->GetOption<float>("GlobalScaling.Exponent.Vanilla.Heal", 1.35f),
-            sConfigMgr->GetOption<float>("GlobalScaling.Exponent.Vanilla.DoT", 1.35f)
+            sConfigMgr->GetOption<float>("GlobalScaling.Exponent.Vanilla.Mana", 1.70f),
+            sConfigMgr->GetOption<float>("GlobalScaling.Exponent.Vanilla.Damage", 1.76f),
+            sConfigMgr->GetOption<float>("GlobalScaling.Exponent.Vanilla.Spell", 1.60f),
+            sConfigMgr->GetOption<float>("GlobalScaling.Exponent.Vanilla.Armor", 1.55f),
+            sConfigMgr->GetOption<float>("GlobalScaling.Exponent.Vanilla.Heal", 1.60f),
+            sConfigMgr->GetOption<float>("GlobalScaling.Exponent.Vanilla.DoT", 1.60f)
         };
         ExpansionExponents[1] = {
-            sConfigMgr->GetOption<float>("GlobalScaling.Exponent.TBC.HP", 1.70f),
-            sConfigMgr->GetOption<float>("GlobalScaling.Exponent.TBC.Mana", 1.50f),
-            sConfigMgr->GetOption<float>("GlobalScaling.Exponent.TBC.Damage", 1.60f),
-            sConfigMgr->GetOption<float>("GlobalScaling.Exponent.TBC.Spell", 1.25f),
-            sConfigMgr->GetOption<float>("GlobalScaling.Exponent.TBC.Armor", 1.40f),
-            sConfigMgr->GetOption<float>("GlobalScaling.Exponent.TBC.Heal", 1.25f),
-            sConfigMgr->GetOption<float>("GlobalScaling.Exponent.TBC.DoT", 1.25f)
+            sConfigMgr->GetOption<float>("GlobalScaling.Exponent.TBC.HP", 1.65f),
+            sConfigMgr->GetOption<float>("GlobalScaling.Exponent.TBC.Mana", 1.40f),
+            sConfigMgr->GetOption<float>("GlobalScaling.Exponent.TBC.Damage", 1.55f),
+            sConfigMgr->GetOption<float>("GlobalScaling.Exponent.TBC.Spell", 1.45f),
+            sConfigMgr->GetOption<float>("GlobalScaling.Exponent.TBC.Armor", 1.35f),
+            sConfigMgr->GetOption<float>("GlobalScaling.Exponent.TBC.Heal", 1.45f),
+            sConfigMgr->GetOption<float>("GlobalScaling.Exponent.TBC.DoT", 1.45f)
         };
         ExpansionExponents[2] = {
-            sConfigMgr->GetOption<float>("GlobalScaling.Exponent.WotLK.HP", 1.35f),
-            sConfigMgr->GetOption<float>("GlobalScaling.Exponent.WotLK.Mana", 1.25f),
-            sConfigMgr->GetOption<float>("GlobalScaling.Exponent.WotLK.Damage", 1.30f),
-            sConfigMgr->GetOption<float>("GlobalScaling.Exponent.WotLK.Spell", 1.30f),
+            sConfigMgr->GetOption<float>("GlobalScaling.Exponent.WotLK.HP", 2.60f),
+            sConfigMgr->GetOption<float>("GlobalScaling.Exponent.WotLK.Mana", 1.80f),
+            sConfigMgr->GetOption<float>("GlobalScaling.Exponent.WotLK.Damage", 2.20f),
+            sConfigMgr->GetOption<float>("GlobalScaling.Exponent.WotLK.Spell", 2.20f),
             sConfigMgr->GetOption<float>("GlobalScaling.Exponent.WotLK.Armor", 1.20f),
-            sConfigMgr->GetOption<float>("GlobalScaling.Exponent.WotLK.Heal", 1.30f),
-            sConfigMgr->GetOption<float>("GlobalScaling.Exponent.WotLK.DoT", 1.30f)
+            sConfigMgr->GetOption<float>("GlobalScaling.Exponent.WotLK.Heal", 2.20f),
+            sConfigMgr->GetOption<float>("GlobalScaling.Exponent.WotLK.DoT", 2.20f)
         };
 
         ExcludedMaps = ParseUInt32Set(sConfigMgr->GetOption<std::string>("GlobalScaling.ExcludedMaps", ""));
@@ -352,7 +352,7 @@ namespace GlobalScaleConfig
         ExpansionMult[0] = {
             sConfigMgr->GetOption<float>("GlobalScaling.Expansion.Vanilla.HP", 1.0f),
             sConfigMgr->GetOption<float>("GlobalScaling.Expansion.Vanilla.Mana", 1.0f),
-            sConfigMgr->GetOption<float>("GlobalScaling.Expansion.Vanilla.Damage", 1.35f),
+            sConfigMgr->GetOption<float>("GlobalScaling.Expansion.Vanilla.Damage", 1.05f),
             sConfigMgr->GetOption<float>("GlobalScaling.Expansion.Vanilla.Spell", 1.0f),
             sConfigMgr->GetOption<float>("GlobalScaling.Expansion.Vanilla.Armor", 1.0f),
             sConfigMgr->GetOption<float>("GlobalScaling.Expansion.Vanilla.Resistance", 1.0f),
@@ -361,20 +361,20 @@ namespace GlobalScaleConfig
             sConfigMgr->GetOption<float>("GlobalScaling.Expansion.Vanilla.Heal", 1.0f)
         };
         ExpansionMult[1] = {
-            sConfigMgr->GetOption<float>("GlobalScaling.Expansion.TBC.HP", 1.0f),
+            sConfigMgr->GetOption<float>("GlobalScaling.Expansion.TBC.HP", 1.05f),
             sConfigMgr->GetOption<float>("GlobalScaling.Expansion.TBC.Mana", 1.0f),
-            sConfigMgr->GetOption<float>("GlobalScaling.Expansion.TBC.Damage", 1.35f),
-            sConfigMgr->GetOption<float>("GlobalScaling.Expansion.TBC.Spell", 1.0f),
+            sConfigMgr->GetOption<float>("GlobalScaling.Expansion.TBC.Damage", 1.15f),
+            sConfigMgr->GetOption<float>("GlobalScaling.Expansion.TBC.Spell", 1.15f),
             sConfigMgr->GetOption<float>("GlobalScaling.Expansion.TBC.Armor", 1.0f),
             sConfigMgr->GetOption<float>("GlobalScaling.Expansion.TBC.Resistance", 1.0f),
             sConfigMgr->GetOption<float>("GlobalScaling.Expansion.TBC.Gold", 1.0f),
-            sConfigMgr->GetOption<float>("GlobalScaling.Expansion.TBC.DoT", 1.0f),
-            sConfigMgr->GetOption<float>("GlobalScaling.Expansion.TBC.Heal", 1.0f)
+            sConfigMgr->GetOption<float>("GlobalScaling.Expansion.TBC.DoT", 1.15f),
+            sConfigMgr->GetOption<float>("GlobalScaling.Expansion.TBC.Heal", 1.15f)
         };
         ExpansionMult[2] = {
             sConfigMgr->GetOption<float>("GlobalScaling.Expansion.WotLK.HP", 1.0f),
             sConfigMgr->GetOption<float>("GlobalScaling.Expansion.WotLK.Mana", 1.0f),
-            sConfigMgr->GetOption<float>("GlobalScaling.Expansion.WotLK.Damage", 1.35f),
+            sConfigMgr->GetOption<float>("GlobalScaling.Expansion.WotLK.Damage", 1.0f),
             sConfigMgr->GetOption<float>("GlobalScaling.Expansion.WotLK.Spell", 1.0f),
             sConfigMgr->GetOption<float>("GlobalScaling.Expansion.WotLK.Armor", 1.0f),
             sConfigMgr->GetOption<float>("GlobalScaling.Expansion.WotLK.Resistance", 1.0f),
@@ -689,7 +689,6 @@ namespace GlobalScaleConfig
 
         float hpLevelRatio = std::max<float>(1.0f, static_cast<float>(targetLevel) / hpNativeLevel);
         float dmgLevelRatio = std::max<float>(1.0f, static_cast<float>(targetLevel) / dmgNativeLevel);
-        float pureLevelRatio = std::max<float>(1.0f, static_cast<float>(targetLevel) / static_cast<float>(baseStats.NativeLevel));
 
         float catchUpMod = 1.0f;
         if (CatchUpEnable && !isSummon && !isTrigger) 
@@ -835,13 +834,25 @@ namespace GlobalScaleConfig
                 creatureBaseStatsCache[creatureGuid].ScaledMinDmg = minDmg;
             }
 
-            // Update internal base weapon damage so core aura recalculations (e.g. tank debuffs on pull) do not reset the first melee hit
-            creature->SetBaseWeaponDamage(BASE_ATTACK, MINDAMAGE, minDmg);
-            creature->SetBaseWeaponDamage(BASE_ATTACK, MAXDAMAGE, maxDmg);
-            creature->SetBaseWeaponDamage(OFF_ATTACK, MINDAMAGE, minOffDmg);
-            creature->SetBaseWeaponDamage(OFF_ATTACK, MAXDAMAGE, maxOffDmg);
-            creature->SetBaseWeaponDamage(RANGED_ATTACK, MINDAMAGE, minRangedDmg);
-            creature->SetBaseWeaponDamage(RANGED_ATTACK, MAXDAMAGE, maxRangedDmg);
+            // Subtract native AP contribution from BaseWeaponDamage so UpdateDamagePhysical() (BaseWeaponDamage + NativeAP/14 * speed) equals minDmg/maxDmg without inflating AP
+            float baseAttSpeed   = static_cast<float>(creature->GetAttackTime(BASE_ATTACK)) / 1000.0f;
+            float offAttSpeed    = static_cast<float>(creature->GetAttackTime(OFF_ATTACK)) / 1000.0f;
+            float rangedAttSpeed = static_cast<float>(creature->GetAttackTime(RANGED_ATTACK)) / 1000.0f;
+
+            float meleeAPBonus   = (static_cast<float>(baseStats.MeleeAP) / 14.0f) * baseAttSpeed;
+            float offAPBonus     = (static_cast<float>(baseStats.MeleeAP) / 14.0f) * offAttSpeed * 0.5f;
+            float rangedAPBonus  = (static_cast<float>(baseStats.RangedAP) / 14.0f) * rangedAttSpeed;
+
+            creature->SetBaseWeaponDamage(BASE_ATTACK, MINDAMAGE, std::max(1.0f, minDmg - meleeAPBonus));
+            creature->SetBaseWeaponDamage(BASE_ATTACK, MAXDAMAGE, std::max(2.0f, maxDmg - meleeAPBonus));
+            creature->SetBaseWeaponDamage(OFF_ATTACK, MINDAMAGE, std::max(1.0f, minOffDmg - offAPBonus));
+            creature->SetBaseWeaponDamage(OFF_ATTACK, MAXDAMAGE, std::max(2.0f, maxOffDmg - offAPBonus));
+            creature->SetBaseWeaponDamage(RANGED_ATTACK, MINDAMAGE, std::max(1.0f, minRangedDmg - rangedAPBonus));
+            creature->SetBaseWeaponDamage(RANGED_ATTACK, MAXDAMAGE, std::max(2.0f, maxRangedDmg - rangedAPBonus));
+
+            // Keep Attack Power at native values so AP-scaling spells/poisons never double-dip
+            creature->SetUInt32Value(UNIT_FIELD_ATTACK_POWER, baseStats.MeleeAP);
+            creature->SetUInt32Value(UNIT_FIELD_RANGED_ATTACK_POWER, baseStats.RangedAP);
 
             creature->SetFloatValue(UNIT_FIELD_MINDAMAGE, minDmg);
             creature->SetFloatValue(UNIT_FIELD_MAXDAMAGE, maxDmg);
@@ -849,13 +860,6 @@ namespace GlobalScaleConfig
             creature->SetFloatValue(UNIT_FIELD_MAXOFFHANDDAMAGE, maxOffDmg);
             creature->SetFloatValue(UNIT_FIELD_MINRANGEDDAMAGE, minRangedDmg);
             creature->SetFloatValue(UNIT_FIELD_MAXRANGEDDAMAGE, maxRangedDmg);
-
-            float apRatio = std::pow(pureLevelRatio, ctx.Exponents.Damage) * catchUpMod * ctx.Mults.Damage;
-            uint32 scaledMeleeAP  = static_cast<uint32>(baseStats.MeleeAP * apRatio);
-            uint32 scaledRangedAP = static_cast<uint32>(baseStats.RangedAP * apRatio);
-
-            creature->SetUInt32Value(UNIT_FIELD_ATTACK_POWER, scaledMeleeAP);
-            creature->SetUInt32Value(UNIT_FIELD_RANGED_ATTACK_POWER, scaledRangedAP);
         }
 
         if (!damageOnly && !isTrigger)
@@ -1288,7 +1292,7 @@ bool global_scaling_commandscript::HandleScalingStatusCommand(ChatHandler* handl
     handler->PSendSysMessage("Environment: {} | Level: {} (Bonus: {}) | Exp: {}", env, creature->GetLevel(), ctx.Rank.LevelBonus, ctx.Expansion);
     handler->PSendSysMessage("Effective Rank Mults -> HP: {:.2f} | Melee: {:.2f} | Spell: {:.2f} | Armor: {:.2f}", ctx.Rank.Stats.HP, ctx.Rank.Stats.Damage, ctx.Rank.Stats.Spell, ctx.Rank.Stats.Armor);
     handler->PSendSysMessage("Total Mults -> HP: {:.2f} | Melee: {:.2f} | Spell: {:.2f} | Armor: {:.2f}", ctx.Mults.HP, ctx.Mults.Damage, ctx.Mults.Spell, ctx.Mults.Armor);
-    handler->PSendSysMessage("Final Stats -> Health: {} | Armor: {}", creature->GetMaxHealth(), (uint32)creature->GetArmor());
+    handler->PSendSysMessage("Final Stats -> Health: {} | Armor: {} | AP: {}", creature->GetMaxHealth(), (uint32)creature->GetArmor(), creature->GetUInt32Value(UNIT_FIELD_ATTACK_POWER));
     return true;
 }
 
@@ -1426,14 +1430,20 @@ void Global_Scaling_UnitScript::ModifySpellDamageTaken(Unit* target, Unit* attac
     if (!GlobalScaleConfig::Enable || GlobalScaleConfig::IsPlayerOwnedOrControlled(creature)) return;
 
     float intrinsicSpellScale = 1.0f;
+    uint32 nativeLevel = 1;
     {
         std::shared_lock<std::shared_mutex> lock(GlobalScaleConfig::CacheMutex);
-        if (GlobalScaleConfig::creatureBaseStatsCache.find(guid) != GlobalScaleConfig::creatureBaseStatsCache.end())
-            intrinsicSpellScale = GlobalScaleConfig::creatureBaseStatsCache[guid].IntrinsicSpellScale;
+        auto itCache = GlobalScaleConfig::creatureBaseStatsCache.find(guid);
+        if (itCache != GlobalScaleConfig::creatureBaseStatsCache.end())
+        {
+            intrinsicSpellScale = itCache->second.IntrinsicSpellScale;
+            nativeLevel = itCache->second.NativeLevel;
+        }
     }
 
     GlobalScaleConfig::CreatureScaleContext ctx = GlobalScaleConfig::GetCreatureScaleContext(creature, creature->GetCreatureTemplate());
     bool isWeaponBasedSpell = false;
+    int32 nativeSpellDmg = 0;
 
     if (spellInfo)
     {
@@ -1447,21 +1457,35 @@ void Global_Scaling_UnitScript::ModifySpellDamageTaken(Unit* target, Unit* attac
                 isWeaponBasedSpell = true;
                 break;
             }
+
+            if (spellInfo->Effects[i].Effect == SPELL_EFFECT_SCHOOL_DAMAGE ||
+                spellInfo->Effects[i].Effect == SPELL_EFFECT_ENVIRONMENTAL_DAMAGE ||
+                spellInfo->Effects[i].Effect == SPELL_EFFECT_HEALTH_LEECH)
+            {
+                int32 bp = spellInfo->Effects[i].BasePoints + 1;
+                int32 maxBp = spellInfo->Effects[i].BasePoints + static_cast<int32>(spellInfo->Effects[i].DieSides);
+                int32 effDmg = std::max(bp, maxBp);
+
+                if (spellInfo->Effects[i].RealPointsPerLevel > 0.0f)
+                {
+                    int32 calcLvl = static_cast<int32>(nativeLevel);
+                    if (spellInfo->MaxLevel > 0 && calcLvl > static_cast<int32>(spellInfo->MaxLevel))
+                        calcLvl = static_cast<int32>(spellInfo->MaxLevel);
+                    else if (calcLvl < static_cast<int32>(spellInfo->BaseLevel))
+                        calcLvl = static_cast<int32>(spellInfo->BaseLevel);
+                    calcLvl -= static_cast<int32>(spellInfo->SpellLevel);
+                    if (calcLvl > 0)
+                        effDmg += static_cast<int32>(calcLvl * spellInfo->Effects[i].RealPointsPerLevel);
+                }
+
+                if (effDmg > 0)
+                    nativeSpellDmg += effDmg;
+            }
         }
     }
 
-    float dynamicScale = 1.0f;
-    if (!isWeaponBasedSpell)
-    {
-        dynamicScale = intrinsicSpellScale;
-    }
-
+    float dynamicScale = isWeaponBasedSpell ? 1.0f : intrinsicSpellScale;
     float rankMult = ctx.Mults.Spell;
-    if (spellInfo && (spellInfo->DmgClass == SPELL_DAMAGE_CLASS_MELEE || spellInfo->DmgClass == SPELL_DAMAGE_CLASS_RANGED))
-    {
-        rankMult = ctx.Mults.Damage;
-    }
-
     float totalSpellMult = dynamicScale * rankMult;
     bool hasCustomOverride = false;
 
@@ -1494,7 +1518,13 @@ void Global_Scaling_UnitScript::ModifySpellDamageTaken(Unit* target, Unit* attac
     }
 
     if ((!isWeaponBasedSpell || hasCustomOverride) && totalSpellMult != 1.0f)
-        damage = static_cast<int32>(damage * totalSpellMult);
+    {
+        // Prevent double-scaling if core/level/AP already inflated the spell's base damage before the hook
+        if (!hasCustomOverride && nativeSpellDmg > 0 && damage > nativeSpellDmg * 2)
+            damage = static_cast<int32>(nativeSpellDmg * totalSpellMult);
+        else
+            damage = static_cast<int32>(damage * totalSpellMult);
+    }
 }
 
 void Global_Scaling_UnitScript::ModifyPeriodicDamageAurasTick(Unit* target, Unit* attacker, uint32& damage, SpellInfo const* spellInfo)
@@ -1521,14 +1551,20 @@ void Global_Scaling_UnitScript::ModifyPeriodicDamageAurasTick(Unit* target, Unit
     if (!GlobalScaleConfig::Enable || GlobalScaleConfig::IsPlayerOwnedOrControlled(creature)) return;
 
     float intrinsicDoTScale = 1.0f;
+    uint32 nativeLevel = 1;
     {
         std::shared_lock<std::shared_mutex> lock(GlobalScaleConfig::CacheMutex);
-        if (GlobalScaleConfig::creatureBaseStatsCache.find(guid) != GlobalScaleConfig::creatureBaseStatsCache.end())
-            intrinsicDoTScale = GlobalScaleConfig::creatureBaseStatsCache[guid].IntrinsicDoTScale;
+        auto itCache = GlobalScaleConfig::creatureBaseStatsCache.find(guid);
+        if (itCache != GlobalScaleConfig::creatureBaseStatsCache.end())
+        {
+            intrinsicDoTScale = itCache->second.IntrinsicDoTScale;
+            nativeLevel = itCache->second.NativeLevel;
+        }
     }
 
     GlobalScaleConfig::CreatureScaleContext ctx = GlobalScaleConfig::GetCreatureScaleContext(creature, creature->GetCreatureTemplate());
     bool isWeaponBasedSpell = false;
+    uint32 nativeTickDmg = 0;
     
     if (spellInfo)
     {
@@ -1542,10 +1578,33 @@ void Global_Scaling_UnitScript::ModifyPeriodicDamageAurasTick(Unit* target, Unit
                 isWeaponBasedSpell = true;
                 break;
             }
+
+            if (spellInfo->Effects[i].ApplyAuraName == SPELL_AURA_PERIODIC_DAMAGE ||
+                spellInfo->Effects[i].ApplyAuraName == SPELL_AURA_PERIODIC_LEECH)
+            {
+                int32 bp = spellInfo->Effects[i].BasePoints + 1;
+                int32 maxBp = spellInfo->Effects[i].BasePoints + static_cast<int32>(spellInfo->Effects[i].DieSides);
+                int32 effDmg = std::max(bp, maxBp);
+
+                if (spellInfo->Effects[i].RealPointsPerLevel > 0.0f)
+                {
+                    int32 calcLvl = static_cast<int32>(nativeLevel);
+                    if (spellInfo->MaxLevel > 0 && calcLvl > static_cast<int32>(spellInfo->MaxLevel))
+                        calcLvl = static_cast<int32>(spellInfo->MaxLevel);
+                    else if (calcLvl < static_cast<int32>(spellInfo->BaseLevel))
+                        calcLvl = static_cast<int32>(spellInfo->BaseLevel);
+                    calcLvl -= static_cast<int32>(spellInfo->SpellLevel);
+                    if (calcLvl > 0)
+                        effDmg += static_cast<int32>(calcLvl * spellInfo->Effects[i].RealPointsPerLevel);
+                }
+
+                if (effDmg > 0)
+                    nativeTickDmg += static_cast<uint32>(effDmg);
+            }
         }
     }
 
-    float dynamicScale = intrinsicDoTScale;
+    float dynamicScale = isWeaponBasedSpell ? 1.0f : intrinsicDoTScale;
     float rankMult = ctx.Mults.DoT;
 
     float totalSpellMult = dynamicScale * rankMult;
@@ -1570,8 +1629,13 @@ void Global_Scaling_UnitScript::ModifyPeriodicDamageAurasTick(Unit* target, Unit
         }
     }
 
-    if (totalSpellMult != 1.0f)
-        damage = static_cast<uint32>(damage * totalSpellMult);
+    if ((!isWeaponBasedSpell || hasCustomOverride) && totalSpellMult != 1.0f)
+    {
+        if (!hasCustomOverride && nativeTickDmg > 0 && damage > nativeTickDmg * 2)
+            damage = static_cast<uint32>(nativeTickDmg * totalSpellMult);
+        else
+            damage = static_cast<uint32>(damage * totalSpellMult);
+    }
 }
 
 void Global_Scaling_UnitScript::ModifyHealReceived(Unit* target, Unit* healer, uint32& addhealth, SpellInfo const* spellInfo)
