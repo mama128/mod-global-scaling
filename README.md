@@ -54,7 +54,10 @@ Every single dungeon and raid map ID in Vanilla, TBC, and WotLK is pre-configure
 Fine-tune specific encounters without recompiling:
 * **`GlobalScaling.CustomCreatures`:** Override Base Level, HP, Mana, Melee, Spell, Armor, Resistance, Gold, Heal, and DoT multipliers for specific NPC Entry IDs.
 * **Spell Overrides (`CustomDamageSpells`, `CustomHealingSpells`, `CustomShieldSpells`, `CustomMeleeSpells`):** Apply custom multipliers to specific Spell IDs (e.g., *Shield Slam* or specific boss abilities that don't scale natively with Attack Power).
-* **Visual Size Overrides (`SizeOverride.Maps` & `SizeOverride.Creatures`):** Multiplies the visual model scale (`OBJECT_FIELD_SCALE_X`) of trash mobs and bosses per instance (`MapID`) or per specific creature (`EntryID`). In vanilla World of Warcraft, low-level dungeons (such as *Ragefire Chasm* or *The Deadmines*) natively feature much smaller creature and boss models compared to high-level endgame instances. This setting lets you scale up their physical presence so they look as intimidating as their new Level 80 endgame stats, while allowing specific `EntryID` overrides to take priority over map-wide settings.
+* **Visual Size Overrides (`SizeOverride.Maps`, `SizeOverride.Overworld` & `SizeOverride.Creatures`):** Multiplies the visual model scale (`OBJECT_FIELD_SCALE_X`) of creatures with full toggle support (`.Enable = 1/0`) and priority rules:
+  * **Overworld (`SizeOverride.Overworld`):** Scales overworld creatures per continent map ID (`MapID`) across 5 distinct ranks: `Trash`, `Elite`, `RareElite`, `Rare`, and `SkullBoss`.
+  * **Instances (`SizeOverride.Maps`):** Multiplies the visual model scale of trash mobs and bosses per dungeon/raid instance (`MapID`). In vanilla World of Warcraft, low-level dungeons (such as *Ragefire Chasm* or *The Deadmines*) natively feature much smaller creature and boss models compared to high-level endgame instances. This setting lets you scale up their physical presence so they look as intimidating as their new Level 80 endgame stats.
+  * **Creatures (`SizeOverride.Creatures`):** Multiplies the visual size of a specific creature or boss by its `EntryID`, taking absolute priority over both map-wide and overworld settings.
 
 ---
 
