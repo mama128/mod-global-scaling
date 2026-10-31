@@ -36,27 +36,27 @@ GlobalScaling.CatchUp.TBC.MaxBonus = 1.45
 # ==============================================================================
 GlobalScaling.Exponent.Vanilla.HP = 2.05
 GlobalScaling.Exponent.Vanilla.Mana = 1.70
-GlobalScaling.Exponent.Vanilla.Damage = 1.90
-GlobalScaling.Exponent.Vanilla.Spell = 1.35
+GlobalScaling.Exponent.Vanilla.Damage = 1.76
+GlobalScaling.Exponent.Vanilla.Spell = 1.60
 GlobalScaling.Exponent.Vanilla.Armor = 1.55
-GlobalScaling.Exponent.Vanilla.Heal = 1.35
-GlobalScaling.Exponent.Vanilla.DoT = 1.35
+GlobalScaling.Exponent.Vanilla.Heal = 1.60
+GlobalScaling.Exponent.Vanilla.DoT = 1.60
 
 GlobalScaling.Exponent.TBC.HP = 1.65
 GlobalScaling.Exponent.TBC.Mana = 1.40
 GlobalScaling.Exponent.TBC.Damage = 1.55
-GlobalScaling.Exponent.TBC.Spell = 1.25
+GlobalScaling.Exponent.TBC.Spell = 1.45
 GlobalScaling.Exponent.TBC.Armor = 1.35
-GlobalScaling.Exponent.TBC.Heal = 1.25
-GlobalScaling.Exponent.TBC.DoT = 1.25
+GlobalScaling.Exponent.TBC.Heal = 1.45
+GlobalScaling.Exponent.TBC.DoT = 1.45
 
-GlobalScaling.Exponent.WotLK.HP = 1.35
-GlobalScaling.Exponent.WotLK.Mana = 1.25
-GlobalScaling.Exponent.WotLK.Damage = 1.30
-GlobalScaling.Exponent.WotLK.Spell = 1.30
+GlobalScaling.Exponent.WotLK.HP = 2.60
+GlobalScaling.Exponent.WotLK.Mana = 1.80
+GlobalScaling.Exponent.WotLK.Damage = 2.20
+GlobalScaling.Exponent.WotLK.Spell = 2.20
 GlobalScaling.Exponent.WotLK.Armor = 1.20
-GlobalScaling.Exponent.WotLK.Heal = 1.30
-GlobalScaling.Exponent.WotLK.DoT = 1.30
+GlobalScaling.Exponent.WotLK.Heal = 2.20
+GlobalScaling.Exponent.WotLK.DoT = 2.20
 
 # ==============================================================================
 # GLOBAL MULTIPLIERS (OVERWORLD ONLY)
@@ -66,7 +66,7 @@ GlobalScaling.Mult.Overworld = 1.0
 
 GlobalScaling.Expansion.Vanilla.HP = 1.0
 GlobalScaling.Expansion.Vanilla.Mana = 1.0
-GlobalScaling.Expansion.Vanilla.Damage = 1.35
+GlobalScaling.Expansion.Vanilla.Damage = 1.05
 GlobalScaling.Expansion.Vanilla.Spell = 1.0
 GlobalScaling.Expansion.Vanilla.Armor = 1.0
 GlobalScaling.Expansion.Vanilla.Resistance = 1.0
@@ -74,19 +74,19 @@ GlobalScaling.Expansion.Vanilla.Gold = 1.0
 GlobalScaling.Expansion.Vanilla.Heal = 1.0
 GlobalScaling.Expansion.Vanilla.DoT = 1.0
 
-GlobalScaling.Expansion.TBC.HP = 1.0
+GlobalScaling.Expansion.TBC.HP = 1.05
 GlobalScaling.Expansion.TBC.Mana = 1.0
-GlobalScaling.Expansion.TBC.Damage = 1.35
-GlobalScaling.Expansion.TBC.Spell = 1.0
+GlobalScaling.Expansion.TBC.Damage = 1.15
+GlobalScaling.Expansion.TBC.Spell = 1.15
 GlobalScaling.Expansion.TBC.Armor = 1.0
 GlobalScaling.Expansion.TBC.Resistance = 1.0
 GlobalScaling.Expansion.TBC.Gold = 1.0
-GlobalScaling.Expansion.TBC.Heal = 1.0
-GlobalScaling.Expansion.TBC.DoT = 1.0
+GlobalScaling.Expansion.TBC.Heal = 1.15
+GlobalScaling.Expansion.TBC.DoT = 1.15
 
 GlobalScaling.Expansion.WotLK.HP = 1.0
 GlobalScaling.Expansion.WotLK.Mana = 1.0
-GlobalScaling.Expansion.WotLK.Damage = 1.35
+GlobalScaling.Expansion.WotLK.Damage = 1.0
 GlobalScaling.Expansion.WotLK.Spell = 1.0
 GlobalScaling.Expansion.WotLK.Armor = 1.0
 GlobalScaling.Expansion.WotLK.Resistance = 1.0
@@ -176,7 +176,8 @@ GlobalScaling.Rank.Trigger.DoT = 1.0
 # identified by its Entry ID, regardless of its zone.
 # Format: "EntryID BaseLvl HP Mana Dmg Spell Armor Res Gold Heal DoT"
 # Example: Adjust a specific boss (e.g., ID 18728) :
-GlobalScaling.CustomCreatures = "18728 83 40.0 10.0 2.5 2.5 1.0 1.0 5.0 1.5 1.5,17711 83 24.0 10.0 2.6 2.6 1.0 1.0 5.0 1.5 1.5,6109 83 26.0 10.0 2.2 2.2 1.0 1.0 5.0 1.5 1.5,18338 83 22.0 10.0 2.2 2.2 1.0 1.0 5.0 1.5 1.5,14887 83 16.0 10.0 2.4 2.4 1.0 1.0 5.0 1.5 1.5,14888 83 16.0 10.0 2.4 2.4 1.0 1.0 5.0 1.5 1.5,14889 83 16.0 10.0 2.4 2.4 1.0 1.0 5.0 1.5 1.5,14890 83 16.0 10.0 2.4 2.4 1.0 1.0 5.0 1.5 1.5"
+GlobalScaling.CustomCreatures = "18728 83 25.0 10.0 2.5 2.5 1.0 1.0 5.0 1.5 1.5,17711 83 28.0 10.0 2.6 2.6 1.0 1.0 5.0 1.5 1.5,6109 83 22.0 10.0 2.2 2.2 1.0 1.0 5.0 1.5 1.5,18338 83 22.0 10.0 2.2 2.2 1.0 1.0 5.0 1.5 1.5,14887 83 24.0 10.0 2.4 2.4 1.0 1.0 5.0 1.5 1.5,14888 83 24.0 10.0 2.4 2.4 1.0 1.0 5.0 1.5 1.5,14889 83 24.0 10.0 2.4 2.4 1.0 1.0 5.0 1.5 1.5,14890 83 24.0 10.0 2.4 2.4 1.0 1.0 5.0 1.5 1.5"
+
 # 2. GlobalScaling.CustomHealingSpells
 # Description: Allows applying an exception multiplier to a specific direct 
 # healing spell cast by an NPC (based on Spell ID).
