@@ -16,6 +16,7 @@ GlobalScaling.UpdateDistance = 150.0
 
 GlobalScaling.ExcludedMaps = ""
 GlobalScaling.ExcludedCreatures = ""
+GlobalScaling.ForceBossCreatures = "7023,7228,7359,13233,13596,9025,9026,9031,9041,9042,9056,9033,11143"
 
 # ==============================================================================
 # CATCH-UP (LATE EXPANSION BOOST)
@@ -223,7 +224,7 @@ GlobalScaling.SizeOverride.Overworld.Enable = 0
 GlobalScaling.SizeOverride.Overworld = "0 1.5 2.0 2.0 2.0 2.5, 1 1.5 2.0 2.0 2.0 2.5, 530 1.5 2.0 2.0 2.0 2.5, 571 1.5 2.0 2.0 2.0 2.5"
 
 # 2. Instances & Dungeons/Raids Size Overrides (Enable / Disable switch)
-GlobalScaling.SizeOverride.Maps.Enable = 1
+GlobalScaling.SizeOverride.Maps.Enable = 0
 # Description: Multiplies the visual size of creatures per instance (MapID), distinguishing between Trash and Bosses.
 # Format: "MapID TrashScale BossScale,MapID2 TrashScale2 BossScale2"
 # Example: In Ragefire Chasm (389), trash scale is normal (1.0) but bosses are doubled (2.0) :
@@ -796,7 +797,7 @@ GlobalScaling.Instance.70.0.Rank.Commander.Gold = 1.5
 GlobalScaling.Instance.70.0.Rank.Commander.Heal = 2.2
 GlobalScaling.Instance.70.0.Rank.Commander.DoT = 2.2
 GlobalScaling.Instance.70.0.Rank.BossNonSkull.LevelBonus = 3
-GlobalScaling.Instance.70.0.Rank.BossNonSkull.HP = 22.0
+GlobalScaling.Instance.70.0.Rank.BossNonSkull.HP = 24.0
 GlobalScaling.Instance.70.0.Rank.BossNonSkull.Mana = 7.0
 GlobalScaling.Instance.70.0.Rank.BossNonSkull.Damage = 26.0
 GlobalScaling.Instance.70.0.Rank.BossNonSkull.Spell = 6.0
