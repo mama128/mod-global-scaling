@@ -59,6 +59,7 @@ namespace GlobalScaleConfig
 {
     std::atomic<bool> isConfigInit(false);
     std::shared_mutex ConfigRWLock; 
+    std::shared_mutex CacheMutex;
 
     bool Enable = true;
     bool AffectDungeons = true;
@@ -84,6 +85,7 @@ namespace GlobalScaleConfig
 
     std::set<uint32> ExcludedMaps;
     std::set<uint32> ExcludedCreatures;
+    std::set<uint32> ForceBossCreatures;
     
     std::map<uint32, CustomScaleData> CustomCreatures;
     std::map<uint32, float> CustomHealingSpells;
@@ -160,8 +162,6 @@ namespace GlobalScaleConfig
         bool IsDungeon;
         bool IsRaid;
     };
-
-    std::shared_mutex CacheMutex;
 
     std::unordered_set<uint64> scaledCreatures;
     std::unordered_set<uint64> activePeriodicChecks;
@@ -325,6 +325,7 @@ namespace GlobalScaleConfig
 
         ExcludedMaps = ParseUInt32Set(sConfigMgr->GetOption<std::string>("GlobalScaling.ExcludedMaps", ""));
         ExcludedCreatures = ParseUInt32Set(sConfigMgr->GetOption<std::string>("GlobalScaling.ExcludedCreatures", ""));
+        ForceBossCreatures = ParseUInt32Set(sConfigMgr->GetOption<std::string>("GlobalScaling.ForceBossCreatures", "7023"));
         CustomCreatures = ParseCustomData(sConfigMgr->GetOption<std::string>("GlobalScaling.CustomCreatures", ""));
         CustomHealingSpells = ParseSpellMults(sConfigMgr->GetOption<std::string>("GlobalScaling.CustomHealingSpells", ""));
         CustomDamageSpells = ParseSpellMults(sConfigMgr->GetOption<std::string>("GlobalScaling.CustomDamageSpells", ""));
@@ -455,16 +456,21 @@ namespace GlobalScaleConfig
         CreatureScaleContext ctx;
         uint32 mapId = creature->GetMap()->GetId();
         uint32 difficulty = static_cast<uint32>(creature->GetMap()->GetSpawnMode());
-        uint32 entry = cInfo->Entry;
+        uint32 masterEntry = creature->GetEntry();
+        uint32 templateEntry = cInfo->Entry;
 
         ctx.Expansion = cInfo->expansion > 2 ? 2 : cInfo->expansion;
         ctx.Exponents = ExpansionExponents[ctx.Expansion];
 
         bool isTrigger = creature->IsTrigger() || ((cInfo->flags_extra & 0x00000080) != 0);
-        bool isBoss = creature->IsDungeonBoss() || ((cInfo->type_flags & 0x00000004) != 0) || (cInfo->rank == 2);
+        bool isForcedBoss = ForceBossCreatures.count(masterEntry) > 0 || ForceBossCreatures.count(templateEntry) > 0;
+        bool isBoss = isForcedBoss || creature->IsDungeonBoss() || ((cInfo->type_flags & 0x00000004) != 0) || (cInfo->rank == 2);
         bool isSkullBoss = (cInfo->rank == 3) || creature->isWorldBoss();
 
-        auto itCreature = CustomCreatures.find(entry);
+        auto itCreature = CustomCreatures.find(masterEntry);
+        if (itCreature == CustomCreatures.end() && templateEntry != masterEntry)
+            itCreature = CustomCreatures.find(templateEntry);
+
         if (itCreature != CustomCreatures.end())
         {
             ctx.Mults.HP         = MultGeneral * itCreature->second.Stats.HP;
@@ -545,13 +551,22 @@ namespace GlobalScaleConfig
 
     bool ApplyScalingToCreature(Creature* creature, bool damageOnly)
     {
+        if (!creature || !creature->IsInWorld() || !creature->IsAlive() || creature->isDead())
+            return false;
+
         EnsureConfigLoaded();
         std::shared_lock<std::shared_mutex> configLock(ConfigRWLock);
 
         CreatureTemplate const* cInfo = creature->GetCreatureTemplate();
-        if (!cInfo || creature->IsCritter() || ExcludedCreatures.count(cInfo->Entry) || ExcludedMaps.count(creature->GetMap()->GetId())) return false;
+        if (!cInfo || creature->IsCritter())
+            return false;
 
-        if (IsPlayerOwnedOrControlled(creature)) return false;
+        uint32 masterEntry = creature->GetEntry();
+        if (ExcludedCreatures.count(masterEntry) || ExcludedCreatures.count(cInfo->Entry) || ExcludedMaps.count(creature->GetMap()->GetId()))
+            return false;
+
+        if (IsPlayerOwnedOrControlled(creature))
+            return false;
 
         float initialHealthPct = creature->GetHealthPct();
         float initialManaPct = 0.0f;
@@ -580,7 +595,7 @@ namespace GlobalScaleConfig
                 }
             }
 
-            if (needsRevert)
+            if (needsRevert && creature->IsAlive() && !creature->isDead())
             {
                 creature->SetLevel(baseStats.SpawnLevel);
                 creature->SetMaxHealth(baseStats.OriginalMaxHealth);
@@ -620,7 +635,10 @@ namespace GlobalScaleConfig
         }
 
         uint32 baseLevel = ctx.IsRaid ? RaidBaseLevel : (ctx.IsDungeon ? DungeonBaseLevel : BaseLevel);
-        auto itCustom = CustomCreatures.find(cInfo->Entry);
+        auto itCustom = CustomCreatures.find(masterEntry);
+        if (itCustom == CustomCreatures.end() && cInfo->Entry != masterEntry)
+            itCustom = CustomCreatures.find(cInfo->Entry);
+
         if (itCustom != CustomCreatures.end() && itCustom->second.BaseLevel > 0)
         {
             baseLevel = itCustom->second.BaseLevel;
@@ -697,12 +715,12 @@ namespace GlobalScaleConfig
 
         float hpNativeLevel = static_cast<float>(baseStats.NativeLevel);
         float dmgNativeLevel = static_cast<float>(baseStats.NativeLevel);
+        float spellNativeLevel = static_cast<float>(baseStats.NativeLevel);
 
         if (isSummon)
         {
             uint32 hpBaseline = currentSpawnLevel > baseStats.NativeLevel ? currentSpawnLevel : baseStats.NativeLevel;
             hpNativeLevel = static_cast<float>(hpBaseline);
-            dmgNativeLevel = hpNativeLevel;
         }
 
         if (hpNativeLevel < MinNativeLevel)
@@ -715,12 +733,18 @@ namespace GlobalScaleConfig
             float progress = dmgNativeLevel / static_cast<float>(MinNativeLevel);
             dmgNativeLevel = static_cast<float>(MinNativeLevel) * (0.3f + 0.7f * progress);
         }
+        if (spellNativeLevel < MinNativeLevel)
+        {
+            float progress = spellNativeLevel / static_cast<float>(MinNativeLevel);
+            spellNativeLevel = static_cast<float>(MinNativeLevel) * (0.3f + 0.7f * progress);
+        }
 
         float hpLevelRatio = std::max<float>(1.0f, static_cast<float>(targetLevel) / hpNativeLevel);
         float dmgLevelRatio = std::max<float>(1.0f, static_cast<float>(targetLevel) / dmgNativeLevel);
+        float spellLevelRatio = std::max<float>(1.0f, static_cast<float>(targetLevel) / spellNativeLevel);
 
         float catchUpMod = 1.0f;
-        if (CatchUpEnable && !isSummon && !isTrigger) 
+        if (CatchUpEnable && !isTrigger) 
         {
             bool applyCatchUp = true;
             if ((ctx.IsDungeon || ctx.IsRaid) && !CatchUpAffectInstances)
@@ -761,14 +785,26 @@ namespace GlobalScaleConfig
             }
         }
 
-        float intrinsicHpScale    = std::pow(hpLevelRatio, ctx.Exponents.HP) * catchUpMod;
-        float intrinsicManaScale  = std::pow(hpLevelRatio, ctx.Exponents.Mana) * catchUpMod;
+        float hpCatchUpMod = isSummon && (currentSpawnLevel > baseStats.NativeLevel) ? 1.0f : catchUpMod;
+
+        float intrinsicHpScale    = std::pow(hpLevelRatio, ctx.Exponents.HP) * hpCatchUpMod;
+        float intrinsicManaScale  = std::pow(hpLevelRatio, ctx.Exponents.Mana) * hpCatchUpMod;
         float intrinsicDmgScale   = std::pow(dmgLevelRatio, ctx.Exponents.Damage) * catchUpMod;
-        float intrinsicArmorScale = std::pow(dmgLevelRatio, ctx.Exponents.Armor);
+        float intrinsicArmorScale = std::pow(hpLevelRatio, ctx.Exponents.Armor);
+
+        if (isSummon && currentSpawnLevel > baseStats.NativeLevel)
+        {
+			float templateMinDmg = baseStats.MinDmg + (static_cast<float>(baseStats.MeleeAP) / 14.0f) * 2.0f;
+            if (templateMinDmg > 0.0f && baseStats.MinDmg > templateMinDmg * 1.8f)
+            {
+                float coreLinearFactor = std::max<float>(1.0f, static_cast<float>(currentSpawnLevel) / std::max<float>(1.0f, static_cast<float>(baseStats.NativeLevel)));
+                intrinsicDmgScale = std::max<float>(1.0f, intrinsicDmgScale / coreLinearFactor);
+            }
+        }
         
-        float intrinsicSpellScale = std::pow(dmgLevelRatio, ctx.Exponents.Spell) * catchUpMod;
-        float intrinsicDoTScale   = std::pow(dmgLevelRatio, ctx.Exponents.DoT) * catchUpMod;
-        float intrinsicHealScale  = std::pow(dmgLevelRatio, ctx.Exponents.Heal) * catchUpMod;
+        float intrinsicSpellScale = std::pow(spellLevelRatio, ctx.Exponents.Spell) * catchUpMod;
+        float intrinsicDoTScale   = std::pow(spellLevelRatio, ctx.Exponents.DoT) * catchUpMod;
+        float intrinsicHealScale  = std::pow(spellLevelRatio, ctx.Exponents.Heal) * catchUpMod;
 
         if (!alreadyScaled || baseStats.IntrinsicSpellScale != intrinsicSpellScale)
         {
@@ -818,7 +854,7 @@ namespace GlobalScaleConfig
             float calcHealth = static_cast<float>(baseHealth) * intrinsicHpScale * ctx.Mults.HP;
             uint32 newMaxHealth = (calcHealth >= 2100000000.0f) ? 2100000000 : static_cast<uint32>(calcHealth);
             
-            if (newMaxHealth > 0)
+            if (newMaxHealth > 0 && creature->IsAlive() && !creature->isDead())
             {
                 creature->SetMaxHealth(newMaxHealth);
                 {
@@ -892,7 +928,9 @@ namespace GlobalScaleConfig
         if (!damageOnly && !isTrigger)
         {
             float scaleMult = 1.0f;
-            auto itSizeCreature = SizeOverrideCreatures.find(cInfo->Entry);
+            auto itSizeCreature = SizeOverrideCreatures.find(masterEntry);
+            if (itSizeCreature == SizeOverrideCreatures.end() && cInfo->Entry != masterEntry)
+                itSizeCreature = SizeOverrideCreatures.find(cInfo->Entry);
             
             if (itSizeCreature != SizeOverrideCreatures.end())
             {
@@ -908,7 +946,8 @@ namespace GlobalScaleConfig
                         auto itSizeMap = SizeOverrideMaps.find(mapId);
                         if (itSizeMap != SizeOverrideMaps.end())
                         {
-                            bool isAnyBoss = creature->IsDungeonBoss() || ((cInfo->type_flags & 0x00000004) != 0) || (cInfo->rank == 2) || (cInfo->rank == 3) || creature->isWorldBoss();
+                            bool isForcedBossSize = ForceBossCreatures.count(masterEntry) > 0 || ForceBossCreatures.count(cInfo->Entry) > 0;
+                            bool isAnyBoss = isForcedBossSize || creature->IsDungeonBoss() || ((cInfo->type_flags & 0x00000004) != 0) || (cInfo->rank == 2) || (cInfo->rank == 3) || creature->isWorldBoss();
                             scaleMult = isAnyBoss ? itSizeMap->second.BossScale : itSizeMap->second.TrashScale;
                         }
                     }
@@ -970,7 +1009,7 @@ namespace GlobalScaleConfig
 
                 if (creature && creature->IsInWorld())
                 {
-                    if (!creature->IsAlive())
+                    if (!creature->IsAlive() || creature->isDead())
                     {
                         {
                             std::unique_lock<std::shared_mutex> lock(CacheMutex);
@@ -1032,7 +1071,7 @@ namespace GlobalScaleConfig
                     } else if (isEnabled && isScaled) {
                         if (creature->IsInCombat()) {
                             ApplyScalingToCreature(creature, true);
-                        } else if (!IsPlayerOwnedOrControlled(creature)) {
+                        } else if (!IsPlayerOwnedOrControlled(creature) && creature->IsAlive() && !creature->isDead()) {
                             if (creature->GetHealth() < creature->GetMaxHealth())
                             {
                                 if (creature->IsSummon() || creature->IsPet() || creature->IsGuardian() || !creature->GetCharmerOrOwnerGUID().IsEmpty())
@@ -1149,7 +1188,7 @@ void Global_Scaling_CreatureScript::OnCreatureAddWorld(Creature* creature)
     if (isDungeon && !affectDungeons) return;
     if (isRaid && !affectRaids) return;
 
-    if (creature->IsInWorld() && creature->IsAlive())
+    if (creature->IsInWorld() && creature->IsAlive() && !creature->isDead())
     {
         GlobalScaleConfig::ApplyScalingToCreature(creature, false);
     }
@@ -1164,7 +1203,7 @@ void Global_Scaling_CreatureScript::OnCreatureAddWorld(Creature* creature)
     creature->m_Events.AddEvent(new GlobalScalingBasicEvent(
         [creature]()
         {
-            if (creature && creature->IsInWorld() && creature->IsAlive())
+            if (creature && creature->IsInWorld() && creature->IsAlive() && !creature->isDead())
             {
                 GlobalScaleConfig::ApplyScalingToCreature(creature, false);
                 GlobalScaleConfig::SchedulePeriodicCheck(creature);
@@ -1210,26 +1249,26 @@ void Global_Scaling_PlayerScript::OnPlayerMapChanged(Player* player)
     if (isRaid && !affectRaids) return;
     if (!isDungeon && !isRaid) return;
 
-    if (map->GetPlayers().getSize() == 1)
-    {
-        player->m_Events.AddEvent(new GlobalScalingBasicEvent(
-            [player]()
-            {
-                if (!player || !player->IsInWorld()) return;
-                Map* curMap = player->GetMap();
-                if (!curMap->IsNonRaidDungeon() && !curMap->IsRaid()) return;
-                
-                float distance = 5000.0f;
-                std::list<Creature*> creatures;
-                Acore::AnyUnitInObjectRangeCheck check(player, distance);
-                Acore::CreatureListSearcher<Acore::AnyUnitInObjectRangeCheck> searcher(player, creatures, check);
-                Cell::VisitObjects(player, searcher, distance);
+    player->m_Events.AddEvent(new GlobalScalingBasicEvent(
+        [player]()
+        {
+            if (!player || !player->IsInWorld()) return;
+            Map* curMap = player->GetMap();
+            if (!curMap || (!curMap->IsNonRaidDungeon() && !curMap->IsRaid())) return;
+            
+            float distance = 5000.0f;
+            std::list<Creature*> creatures;
+            Acore::AnyUnitInObjectRangeCheck check(player, distance);
+            Acore::CreatureListSearcher<Acore::AnyUnitInObjectRangeCheck> searcher(player, creatures, check);
+            Cell::VisitObjects(player, searcher, distance);
 
-                for (Creature* creature : creatures)
+            for (Creature* creature : creatures)
+            {
+                if (creature && creature->IsAlive() && !creature->isDead())
                     GlobalScaleConfig::ApplyScalingToCreature(creature, false);
             }
-        ), player->m_Events.CalculateTime(1500));
-    }
+        }
+    ), player->m_Events.CalculateTime(1500));
 }
 
 global_scaling_commandscript::global_scaling_commandscript() : CommandScript("global_scaling_commandscript") { }
@@ -1276,7 +1315,10 @@ bool global_scaling_commandscript::HandleScalingToggleCommand(ChatHandler* handl
             Cell::VisitObjects(player, searcher, distance);
             
             for (Creature* creature : creatures)
-                GlobalScaleConfig::ApplyScalingToCreature(creature, false);
+            {
+                if (creature && creature->IsAlive() && !creature->isDead())
+                    GlobalScaleConfig::ApplyScalingToCreature(creature, false);
+            }
         }
     }
 
@@ -1327,16 +1369,18 @@ bool global_scaling_commandscript::HandleScalingStatusCommand(ChatHandler* handl
 
     GlobalScaleConfig::EnsureConfigLoaded();
 
+    uint32 masterEntry = creature->GetEntry();
     GlobalScaleConfig::CreatureScaleContext ctx;
     bool isCustom = false;
     {
         std::shared_lock<std::shared_mutex> configLock(GlobalScaleConfig::ConfigRWLock);
         ctx = GlobalScaleConfig::GetCreatureScaleContext(creature, cInfo);
-        isCustom = GlobalScaleConfig::CustomCreatures.find(cInfo->Entry) != GlobalScaleConfig::CustomCreatures.end();
+        isCustom = (GlobalScaleConfig::CustomCreatures.find(masterEntry) != GlobalScaleConfig::CustomCreatures.end()) ||
+                   (GlobalScaleConfig::CustomCreatures.find(cInfo->Entry) != GlobalScaleConfig::CustomCreatures.end());
     }
 
     handler->PSendSysMessage("--- Target Scaling Status ---");
-    handler->PSendSysMessage("Name: {} (Entry: {})", creature->GetName(), cInfo->Entry);
+    handler->PSendSysMessage("Name: {} (Entry: {} | DiffEntry: {})", creature->GetName(), masterEntry, cInfo->Entry);
     
     std::string env = ctx.IsRaid ? "Raid" : (ctx.IsDungeon ? "Dungeon" : "Overworld");
     if (isCustom) env += " [CUSTOM MOB]";
@@ -1376,7 +1420,7 @@ bool global_scaling_commandscript::HandleScalingUpdateCommand(ChatHandler* handl
     
     for (Creature* creature : creatures)
     {
-        if (GlobalScaleConfig::ApplyScalingToCreature(creature, false))
+        if (creature && creature->IsAlive() && !creature->isDead() && GlobalScaleConfig::ApplyScalingToCreature(creature, false))
             updatedCount++;
     }
     
@@ -1390,7 +1434,7 @@ void Global_Scaling_UnitScript::OnUnitEnterCombat(Unit* unit, Unit*)
 {
     if (!unit) return;
     Creature* creature = unit->ToCreature();
-    if (!creature) return;
+    if (!creature || !creature->IsAlive() || creature->isDead()) return;
 
     GlobalScaleConfig::EnsureConfigLoaded();
 
@@ -1406,7 +1450,7 @@ void Global_Scaling_UnitScript::OnUnitEnterCombat(Unit* unit, Unit*)
     }
 
     {
-        std::unique_lock<std::shared_mutex> lock(GlobalScaleConfig::CacheMutex);
+        std::shared_lock<std::shared_mutex> lock(GlobalScaleConfig::CacheMutex);
         isScaled = (GlobalScaleConfig::scaledCreatures.count(guid) > 0);
 
         if (isScaled && GlobalScaleConfig::creatureBaseStatsCache.find(guid) != GlobalScaleConfig::creatureBaseStatsCache.end())
@@ -1459,7 +1503,7 @@ void Global_Scaling_UnitScript::OnUnitEnterCombat(Unit* unit, Unit*)
 
 void Global_Scaling_UnitScript::ModifySpellDamageTaken(Unit* target, Unit* attacker, int32& damage, SpellInfo const* spellInfo)
 {
-    if (!attacker || !target || damage <= 0) return;
+    if (!attacker || !target || attacker == target || damage <= 0) return;
     
     Creature* creature = attacker->ToCreature();
     if (!creature)
@@ -1478,7 +1522,7 @@ void Global_Scaling_UnitScript::ModifySpellDamageTaken(Unit* target, Unit* attac
         std::unique_lock<std::shared_mutex> lock(GlobalScaleConfig::CacheMutex);
         isScaled = GlobalScaleConfig::scaledCreatures.count(guid) > 0;
     }
-    if (!isScaled)
+    if (!isScaled && creature->IsAlive() && !creature->isDead())
     {
         GlobalScaleConfig::ApplyScalingToCreature(creature, false);
     }
@@ -1499,14 +1543,59 @@ void Global_Scaling_UnitScript::ModifySpellDamageTaken(Unit* target, Unit* attac
         }
     }
 
-    GlobalScaleConfig::CreatureScaleContext ctx = GlobalScaleConfig::GetCreatureScaleContext(creature, creature->GetCreatureTemplate());
+    bool hasCustomOverride = false;
+    float customSpellMult = 1.0f;
+    if (spellInfo)
+    {
+        auto itDmg = GlobalScaleConfig::CustomDamageSpells.find(spellInfo->Id);
+        if (itDmg != GlobalScaleConfig::CustomDamageSpells.end())
+        {
+            customSpellMult = itDmg->second;
+            hasCustomOverride = true;
+        }
+        else
+        {
+            auto itShield = GlobalScaleConfig::CustomShieldSpells.find(spellInfo->Id);
+            if (itShield != GlobalScaleConfig::CustomShieldSpells.end())
+            {
+                customSpellMult = itShield->second;
+                hasCustomOverride = true;
+            }
+            else
+            {
+                auto itMelee = GlobalScaleConfig::CustomMeleeSpells.find(spellInfo->Id);
+                if (itMelee != GlobalScaleConfig::CustomMeleeSpells.end())
+                {
+                    customSpellMult = itMelee->second;
+                    hasCustomOverride = true; 
+                }
+            }
+        }
+    }
+
     bool isWeaponBasedSpell = false;
     int32 nativeSpellDmg = 0;
 
     if (spellInfo)
     {
+        if (!hasCustomOverride)
+        {
+            if (nativeLevel < 72 && spellInfo->SpellLevel > nativeLevel + 8)
+                return;
+
+            if (spellInfo->SpellFamilyName != SPELLFAMILY_GENERIC &&
+                (creature->HasAuraType(SPELL_AURA_REFLECT_SPELLS) || creature->HasAuraType(SPELL_AURA_REFLECT_SPELLS_SCHOOL)))
+                return;
+        }
+
         for (uint8 i = 0; i < MAX_SPELL_EFFECTS; ++i)
         {
+            if (spellInfo->Effects[i].Effect == SPELL_EFFECT_HEALTH_LEECH ||
+                spellInfo->Effects[i].ApplyAuraName == SPELL_AURA_PERIODIC_DAMAGE_PERCENT)
+            {
+                return;
+            }
+
             if (spellInfo->Effects[i].Effect == SPELL_EFFECT_WEAPON_DAMAGE ||
                 spellInfo->Effects[i].Effect == SPELL_EFFECT_WEAPON_DAMAGE_NOSCHOOL ||
                 spellInfo->Effects[i].Effect == SPELL_EFFECT_NORMALIZED_WEAPON_DMG ||
@@ -1542,38 +1631,10 @@ void Global_Scaling_UnitScript::ModifySpellDamageTaken(Unit* target, Unit* attac
         }
     }
 
+    GlobalScaleConfig::CreatureScaleContext ctx = GlobalScaleConfig::GetCreatureScaleContext(creature, creature->GetCreatureTemplate());
     float dynamicScale = isWeaponBasedSpell ? 1.0f : (intrinsicSpellScale > 1.0f ? intrinsicSpellScale : ctx.Mults.Damage);
     float rankMult = ctx.Mults.Spell;
-    float totalSpellMult = dynamicScale * rankMult;
-    bool hasCustomOverride = false;
-
-    if (spellInfo)
-    {
-        auto itDmg = GlobalScaleConfig::CustomDamageSpells.find(spellInfo->Id);
-        if (itDmg != GlobalScaleConfig::CustomDamageSpells.end())
-        {
-            totalSpellMult = itDmg->second;
-            hasCustomOverride = true;
-        }
-        else
-        {
-            auto itShield = GlobalScaleConfig::CustomShieldSpells.find(spellInfo->Id);
-            if (itShield != GlobalScaleConfig::CustomShieldSpells.end())
-            {
-                totalSpellMult = itShield->second;
-                hasCustomOverride = true;
-            }
-            else
-            {
-                auto itMelee = GlobalScaleConfig::CustomMeleeSpells.find(spellInfo->Id);
-                if (itMelee != GlobalScaleConfig::CustomMeleeSpells.end())
-                {
-                    totalSpellMult = itMelee->second;
-                    hasCustomOverride = true; 
-                }
-            }
-        }
-    }
+    float totalSpellMult = hasCustomOverride ? customSpellMult : (dynamicScale * rankMult);
 
     if ((!isWeaponBasedSpell || hasCustomOverride) && totalSpellMult != 1.0f)
     {
@@ -1586,7 +1647,7 @@ void Global_Scaling_UnitScript::ModifySpellDamageTaken(Unit* target, Unit* attac
 
 void Global_Scaling_UnitScript::ModifyPeriodicDamageAurasTick(Unit* target, Unit* attacker, uint32& damage, SpellInfo const* spellInfo)
 {
-    if (!attacker || !target || damage <= 0) return;
+    if (!attacker || !target || attacker == target || damage <= 0) return;
     
     Creature* creature = attacker->ToCreature();
     if (!creature)
@@ -1605,7 +1666,7 @@ void Global_Scaling_UnitScript::ModifyPeriodicDamageAurasTick(Unit* target, Unit
         std::unique_lock<std::shared_mutex> lock(GlobalScaleConfig::CacheMutex);
         isScaled = GlobalScaleConfig::scaledCreatures.count(guid) > 0;
     }
-    if (!isScaled)
+    if (!isScaled && creature->IsAlive() && !creature->isDead())
     {
         GlobalScaleConfig::ApplyScalingToCreature(creature, false);
     }
@@ -1626,14 +1687,42 @@ void Global_Scaling_UnitScript::ModifyPeriodicDamageAurasTick(Unit* target, Unit
         }
     }
 
-    GlobalScaleConfig::CreatureScaleContext ctx = GlobalScaleConfig::GetCreatureScaleContext(creature, creature->GetCreatureTemplate());
+    bool hasCustomOverride = false;
+    float customSpellMult = 1.0f;
+    if (spellInfo)
+    {
+        auto itDmg = GlobalScaleConfig::CustomDamageSpells.find(spellInfo->Id);
+        if (itDmg != GlobalScaleConfig::CustomDamageSpells.end())
+        {
+            customSpellMult = itDmg->second;
+            hasCustomOverride = true;
+        }
+        else
+        {
+            auto itMelee = GlobalScaleConfig::CustomMeleeSpells.find(spellInfo->Id);
+            if (itMelee != GlobalScaleConfig::CustomMeleeSpells.end())
+            {
+                customSpellMult = itMelee->second;
+                hasCustomOverride = true; 
+            }
+        }
+    }
+
     bool isWeaponBasedSpell = false;
     uint32 nativeTickDmg = 0;
     
     if (spellInfo)
     {
+        if (!hasCustomOverride && nativeLevel < 72 && spellInfo->SpellLevel > nativeLevel + 8)
+            return;
+
         for (uint8 i = 0; i < MAX_SPELL_EFFECTS; ++i)
         {
+            if (spellInfo->Effects[i].ApplyAuraName == SPELL_AURA_PERIODIC_DAMAGE_PERCENT)
+            {
+                return;
+            }
+
             if (spellInfo->Effects[i].Effect == SPELL_EFFECT_WEAPON_DAMAGE ||
                 spellInfo->Effects[i].Effect == SPELL_EFFECT_WEAPON_DAMAGE_NOSCHOOL ||
                 spellInfo->Effects[i].Effect == SPELL_EFFECT_NORMALIZED_WEAPON_DMG ||
@@ -1668,30 +1757,10 @@ void Global_Scaling_UnitScript::ModifyPeriodicDamageAurasTick(Unit* target, Unit
         }
     }
 
+    GlobalScaleConfig::CreatureScaleContext ctx = GlobalScaleConfig::GetCreatureScaleContext(creature, creature->GetCreatureTemplate());
     float dynamicScale = isWeaponBasedSpell ? 1.0f : (intrinsicDoTScale > 1.0f ? intrinsicDoTScale : ctx.Mults.Damage);
     float rankMult = ctx.Mults.DoT;
-
-    float totalSpellMult = dynamicScale * rankMult;
-    bool hasCustomOverride = false;
-    
-    if (spellInfo)
-    {
-        auto itDmg = GlobalScaleConfig::CustomDamageSpells.find(spellInfo->Id);
-        if (itDmg != GlobalScaleConfig::CustomDamageSpells.end())
-        {
-            totalSpellMult = itDmg->second;
-            hasCustomOverride = true;
-        }
-        else
-        {
-            auto itMelee = GlobalScaleConfig::CustomMeleeSpells.find(spellInfo->Id);
-            if (itMelee != GlobalScaleConfig::CustomMeleeSpells.end())
-            {
-                totalSpellMult = itMelee->second;
-                hasCustomOverride = true; 
-            }
-        }
-    }
+    float totalSpellMult = hasCustomOverride ? customSpellMult : (dynamicScale * rankMult);
 
     if ((!isWeaponBasedSpell || hasCustomOverride) && totalSpellMult != 1.0f)
     {
@@ -1724,7 +1793,7 @@ void Global_Scaling_UnitScript::ModifyHealReceived(Unit* target, Unit* healer, u
         std::unique_lock<std::shared_mutex> lock(GlobalScaleConfig::CacheMutex);
         isScaled = GlobalScaleConfig::scaledCreatures.count(guid) > 0;
     }
-    if (!isScaled)
+    if (!isScaled && creature->IsAlive() && !creature->isDead())
     {
         GlobalScaleConfig::ApplyScalingToCreature(creature, false);
     }
@@ -1736,8 +1805,9 @@ void Global_Scaling_UnitScript::ModifyHealReceived(Unit* target, Unit* healer, u
     float intrinsicHealScale = 1.0f;
     {
         std::unique_lock<std::shared_mutex> lock(GlobalScaleConfig::CacheMutex);
-        if (GlobalScaleConfig::creatureBaseStatsCache.find(guid) != GlobalScaleConfig::creatureBaseStatsCache.end())
-            intrinsicHealScale = GlobalScaleConfig::creatureBaseStatsCache[guid].IntrinsicHealScale;
+        auto itCache = GlobalScaleConfig::creatureBaseStatsCache.find(guid);
+        if (itCache != GlobalScaleConfig::creatureBaseStatsCache.end())
+            intrinsicHealScale = itCache->second.IntrinsicHealScale;
     }
 
     GlobalScaleConfig::CreatureScaleContext ctx = GlobalScaleConfig::GetCreatureScaleContext(creature, creature->GetCreatureTemplate());
