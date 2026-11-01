@@ -106,3 +106,26 @@ The module provides the `.gscaling` command suite:
 2. Re-run **CMake** and compile your AzerothCore solution.
 3. Copy `mod_global_scaling.conf.dist` to your server's `configs/modules/` directory and rename it to `mod_global_scaling.conf`.
 4. Start `worldserver` and customize `mod_global_scaling.conf` to fit your server's balance preferences.
+
+---
+
+## 🛠️ Troubleshooting & Known Edge Cases
+
+While `mod-global-scaling` dynamically handles over 99% of creatures, dungeons, and raids out of the box, two **very rare & mostly vanilla** mechanics can behave unexpectedly due to how the 3.3.5a core processes creature stats. Both can be fixed in seconds via **`GlobalScaling.CustomCreatures`** (or spell overrides) in `mod_global_scaling.conf` without recompiling:
+
+### 1. Enemy-Summoned Pets & Minions (Low Ability Damage)
+* **The Issue:** A tiny handful of low-level NPCs summon true "pet" units (such as the Westfall Murloc's summoned *Crawler* pet) whose special abilities are hardcoded in the DBC to scale off **Attack Power (AP)** or **Spell Power (SP)**. Because non-player creatures in WoW do not natively build SP/AP gear stats—and native AP is preserved to prevent poison/ability double-dipping—their pet-specific spells may hit for very low values even though their health and white melee hits scale properly. *(Note: This only affects true pet-type summons, not standard boss adds).*
+* **The Fix:** Boost the pet's `Spell` or `Damage` multiplier directly in `GlobalScaling.CustomCreatures` (or target its specific ability via `GlobalScaling.CustomDamageSpells`).
+
+### 2. Reflected Damage One-Shots (e.g., Obsidian Sentinel in Uldaman)
+* **The Issue:** Certain rare creatures feature native **Spell/Damage Reflection** auras or thorns-like effects (most notably the *Obsidian Sentinel* in Uldaman, Entry `7023`). When a Level 80 player reflects a high-damage endgame spell onto themselves and that reflected hit is further multiplied by the creature's Level 80 `Spell` scaling factor, it can result in an instant self-one-shot (OS).
+* **The Fix:** Add the creature's Entry ID to `GlobalScaling.CustomCreatures` and set its `Spell` multiplier to `0.05` or `0.1` (or add the creature to `GlobalScaling.ExcludedCreatures`) so reflected attacks deal normal, survivable damage.
+
+### Quick Configuration Example (`mod_global_scaling.conf`)
+```ini
+# Format: "EntryID BaseLevel HP Mana Damage Spell Armor Resistance Gold Heal DoT"
+# Example: Keep Obsidian Sentinel (7023) at Level 80 with normal HP/Melee (1.0), but reduce Spell scaling to 0.1 to prevent reflected one-shots:
+GlobalScaling.CustomCreatures = "7023 80 1.0 1.0 1.0 0.1 1.0 1.0 1.0 1.0 1.0"
+
+
+<FollowUp label="Voulez-vous vérifier ou compléter le reste de votre fichier README.md ?" query="Oui, aide-moi à revoir la structure complète de mon README.md pour vérifier qu'il ne manque rien."/>
