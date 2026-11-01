@@ -111,7 +111,7 @@ The module provides the `.gscaling` command suite:
 
 ## 🛠️ Troubleshooting & Known Edge Cases
 
-While `mod-global-scaling` dynamically handles over 99% of creatures, dungeons, and raids out of the box, two **very rare & mostly vanilla** mechanics can behave unexpectedly due to how the 3.3.5a core processes creature stats. Both can be fixed in seconds via **`GlobalScaling.CustomCreatures`** (or spell overrides) in `mod_global_scaling.conf` without recompiling:
+While `mod-global-scaling` dynamically handles over 99% of creatures, dungeons, and raids out of the box, a **very rare & mostly vanilla** mechanics can behave unexpectedly due to how the 3.3.5a core processes creature stats. Both can be fixed in seconds via **`GlobalScaling.CustomCreatures`** (or spell overrides) in `mod_global_scaling.conf` without recompiling:
 
 ### Enemy-Summoned Pets & Minions (Low Ability Damage)
 * **The Issue:** A tiny handful of low-level NPCs summon true "pet" units (such as the Westfall Murloc's summoned *Crawler* pet) whose special abilities are hardcoded in the DBC to scale off **Attack Power (AP)** or **Spell Power (SP)**. Because non-player creatures in WoW do not natively build SP/AP gear stats and native AP is preserved to prevent poison/ability double-dipping their pet specific spells may hit for very low values even though their health and white melee hits scale properly. *(Note: This only affects true pet-type summons, not standard boss adds).*
