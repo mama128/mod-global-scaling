@@ -116,6 +116,3 @@ While `mod-global-scaling` dynamically handles over 99% of creatures, dungeons, 
 ### Enemy-Summoned Pets & Minions (High Ability Damage)
 * **The Issue:** A tiny handful of low-level NPCs summon true "pet" units (such as the Westfall Murloc's summoned *Crawler* pet) whose special abilities are hardcoded in the DBC to scale off **Attack Power (AP)** or **Spell Power (SP)**. Because non-player creatures in WoW do not natively build SP/AP gear stats and native AP is preserved to prevent poison/ability double-dipping their pet specific spells may hit for rather high values even though their health and white melee hits scale properly. *(Note: This only affects true pet-type summons, not standard boss adds).*
 * **The Fix:** Boost the pet's `Spell` or `Damage` multiplier directly in `GlobalScaling.CustomCreatures` (or target its specific ability via `GlobalScaling.CustomDamageSpells`).
-
-
-<FollowUp label="Voulez-vous vérifier ou compléter le reste de votre fichier README.md ?" query="Oui, aide-moi à revoir la structure complète de mon README.md pour vérifier qu'il ne manque rien."/>
