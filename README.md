@@ -1,4 +1,6 @@
 # mod-global-scaling (AzerothCore 3.3.5a)
+<img width="1024" height="506" alt="Banner" src="https://github.com/user-attachments/assets/f754f1db-b393-4a0c-b677-b7d8f86ca398" />
+
 
 **`mod-global-scaling`** is a C++ module for **AzerothCore 3.3.5a (Wrath of the Lich King)** that dynamically scales all world zones, dungeons, raids, and world bosses across **Vanilla**, **The Burning Crusade**, and **Wrath of the Lich King** up to **Level 80 endgame difficulty**.
 
