@@ -223,7 +223,7 @@ GlobalScaling.SizeOverride.Overworld.Enable = 1
 # Description: Multiplies the visual size of overworld creatures per continent map ID across 5 distinct ranks.
 # Format: "MapID TrashScale EliteScale EliteRareScale RareScale SkullBossScale,MapID2 ..."
 # Map IDs: 0 = Eastern Kingdoms, 1 = Kalimdor, 530 = Outland / Bloodelves Zones / Draeneis Zones , 571 = Northrend
-GlobalScaling.SizeOverride.Overworld = "0 1.5 2.0 2.0 2.0 2.5, 1 1.5 2.0 2.0 2.0 2.5, 530 1.5 2.0 2.0 2.0 2.5, 571 1.5 2.0 2.0 2.0 2.5"
+GlobalScaling.SizeOverride.Overworld = "0 1 2.0 2.0 2.0 2.0, 1 1 2.0 2.0 2.0 2.0, 530 1 2.0 2.0 2.0 2.0, 571 1 2.0 2.0 2.0 2.0"
 
 # 2. Instances & Dungeons/Raids Size Overrides (Enable / Disable switch)
 GlobalScaling.SizeOverride.Maps.Enable = 1
