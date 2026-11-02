@@ -551,6 +551,7 @@ namespace GlobalScaleConfig
 
     bool ApplyScalingToCreature(Creature* creature, bool damageOnly)
     {
+        // Strict alive check: prevents setting 1 HP on dead corpses and breaking loot
         if (!creature || !creature->IsInWorld() || !creature->IsAlive() || creature->isDead())
             return false;
 
@@ -605,12 +606,14 @@ namespace GlobalScaleConfig
                 if (baseStats.OriginalMaxMana > 0)
                     creature->SetPower(POWER_MANA, static_cast<uint32>(baseStats.OriginalMaxMana * (initialManaPct / 100.0f)));
 
-                creature->SetBaseWeaponDamage(BASE_ATTACK, MINDAMAGE, baseStats.MinDmg);
-                creature->SetBaseWeaponDamage(BASE_ATTACK, MAXDAMAGE, baseStats.MaxDmg);
-                creature->SetBaseWeaponDamage(OFF_ATTACK, MINDAMAGE, baseStats.MinOffHandDmg);
-                creature->SetBaseWeaponDamage(OFF_ATTACK, MAXDAMAGE, baseStats.MaxOffHandDmg);
-                creature->SetBaseWeaponDamage(RANGED_ATTACK, MINDAMAGE, baseStats.MinRangedDmg);
-                creature->SetBaseWeaponDamage(RANGED_ATTACK, MAXDAMAGE, baseStats.MaxRangedDmg);
+                float dmgMod = std::max(0.01f, cInfo->DamageModifier);
+
+                creature->SetBaseWeaponDamage(BASE_ATTACK, MINDAMAGE, std::max(1.0f, baseStats.MinDmg / dmgMod));
+                creature->SetBaseWeaponDamage(BASE_ATTACK, MAXDAMAGE, std::max(2.0f, baseStats.MaxDmg / dmgMod));
+                creature->SetBaseWeaponDamage(OFF_ATTACK, MINDAMAGE, std::max(1.0f, baseStats.MinOffHandDmg / dmgMod));
+                creature->SetBaseWeaponDamage(OFF_ATTACK, MAXDAMAGE, std::max(2.0f, baseStats.MaxOffHandDmg / dmgMod));
+                creature->SetBaseWeaponDamage(RANGED_ATTACK, MINDAMAGE, std::max(1.0f, baseStats.MinRangedDmg / dmgMod));
+                creature->SetBaseWeaponDamage(RANGED_ATTACK, MAXDAMAGE, std::max(2.0f, baseStats.MaxRangedDmg / dmgMod));
 
                 creature->SetFloatValue(UNIT_FIELD_MINDAMAGE, baseStats.MinDmg);
                 creature->SetFloatValue(UNIT_FIELD_MAXDAMAGE, baseStats.MaxDmg);
@@ -719,6 +722,7 @@ namespace GlobalScaleConfig
 
         if (isSummon)
         {
+            // Guardian::InitStatsForLevel scales HP to currentSpawnLevel, so preserve hpBaseline
             uint32 hpBaseline = currentSpawnLevel > baseStats.NativeLevel ? currentSpawnLevel : baseStats.NativeLevel;
             hpNativeLevel = static_cast<float>(hpBaseline);
         }
@@ -744,7 +748,7 @@ namespace GlobalScaleConfig
         float spellLevelRatio = std::max<float>(1.0f, static_cast<float>(targetLevel) / spellNativeLevel);
 
         float catchUpMod = 1.0f;
-        if (CatchUpEnable && !isTrigger) 
+        if (CatchUpEnable && !isSummon && !isTrigger) 
         {
             bool applyCatchUp = true;
             if ((ctx.IsDungeon || ctx.IsRaid) && !CatchUpAffectInstances)
@@ -785,23 +789,20 @@ namespace GlobalScaleConfig
             }
         }
 
-        float hpCatchUpMod = isSummon && (currentSpawnLevel > baseStats.NativeLevel) ? 1.0f : catchUpMod;
-
-        float intrinsicHpScale    = std::pow(hpLevelRatio, ctx.Exponents.HP) * hpCatchUpMod;
-        float intrinsicManaScale  = std::pow(hpLevelRatio, ctx.Exponents.Mana) * hpCatchUpMod;
+        float intrinsicHpScale    = std::pow(hpLevelRatio, ctx.Exponents.HP) * catchUpMod;
+        float intrinsicManaScale  = std::pow(hpLevelRatio, ctx.Exponents.Mana) * catchUpMod;
         float intrinsicDmgScale   = std::pow(dmgLevelRatio, ctx.Exponents.Damage) * catchUpMod;
         float intrinsicArmorScale = std::pow(hpLevelRatio, ctx.Exponents.Armor);
 
+        // Guardian::InitStatsForLevel already applies linear damage scaling (petlevel * 0.75),
+        // so divide out the linear factor to give summons the exact remaining exponential scaling
         if (isSummon && currentSpawnLevel > baseStats.NativeLevel)
         {
-			float templateMinDmg = baseStats.MinDmg + (static_cast<float>(baseStats.MeleeAP) / 14.0f) * 2.0f;
-            if (templateMinDmg > 0.0f && baseStats.MinDmg > templateMinDmg * 1.8f)
-            {
-                float coreLinearFactor = std::max<float>(1.0f, static_cast<float>(currentSpawnLevel) / std::max<float>(1.0f, static_cast<float>(baseStats.NativeLevel)));
-                intrinsicDmgScale = std::max<float>(1.0f, intrinsicDmgScale / coreLinearFactor);
-            }
+            float coreLinearFactor = std::max<float>(1.0f, static_cast<float>(currentSpawnLevel) / std::max<float>(1.0f, static_cast<float>(baseStats.NativeLevel)));
+            intrinsicDmgScale = std::max<float>(1.0f, intrinsicDmgScale / coreLinearFactor);
         }
         
+        // Spells, DoTs, and Heals in DBC are never scaled by Guardian::InitStatsForLevel, so they always use spellLevelRatio
         float intrinsicSpellScale = std::pow(spellLevelRatio, ctx.Exponents.Spell) * catchUpMod;
         float intrinsicDoTScale   = std::pow(spellLevelRatio, ctx.Exponents.DoT) * catchUpMod;
         float intrinsicHealScale  = std::pow(spellLevelRatio, ctx.Exponents.Heal) * catchUpMod;
@@ -899,6 +900,7 @@ namespace GlobalScaleConfig
                 creatureBaseStatsCache[creatureGuid].ScaledMinDmg = minDmg;
             }
 
+            float dmgMod         = std::max(0.01f, cInfo->DamageModifier);
             float baseAttSpeed   = static_cast<float>(creature->GetAttackTime(BASE_ATTACK)) / 1000.0f;
             float offAttSpeed    = static_cast<float>(creature->GetAttackTime(OFF_ATTACK)) / 1000.0f;
             float rangedAttSpeed = static_cast<float>(creature->GetAttackTime(RANGED_ATTACK)) / 1000.0f;
@@ -907,12 +909,13 @@ namespace GlobalScaleConfig
             float offAPBonus     = (static_cast<float>(baseStats.MeleeAP) / 14.0f) * offAttSpeed * 0.5f;
             float rangedAPBonus  = (static_cast<float>(baseStats.RangedAP) / 14.0f) * rangedAttSpeed;
 
-            creature->SetBaseWeaponDamage(BASE_ATTACK, MINDAMAGE, std::max(1.0f, minDmg - meleeAPBonus));
-            creature->SetBaseWeaponDamage(BASE_ATTACK, MAXDAMAGE, std::max(2.0f, maxDmg - meleeAPBonus));
-            creature->SetBaseWeaponDamage(OFF_ATTACK, MINDAMAGE, std::max(1.0f, minOffDmg - offAPBonus));
-            creature->SetBaseWeaponDamage(OFF_ATTACK, MAXDAMAGE, std::max(2.0f, maxOffDmg - offAPBonus));
-            creature->SetBaseWeaponDamage(RANGED_ATTACK, MINDAMAGE, std::max(1.0f, minRangedDmg - rangedAPBonus));
-            creature->SetBaseWeaponDamage(RANGED_ATTACK, MAXDAMAGE, std::max(2.0f, maxRangedDmg - rangedAPBonus));
+            // Divide by DamageModifier so Creature::CalculateMinMaxDamage does not double-dip on weapon abilities (e.g. Aimed Shot)
+            creature->SetBaseWeaponDamage(BASE_ATTACK, MINDAMAGE, std::max(1.0f, (minDmg / dmgMod) - meleeAPBonus));
+            creature->SetBaseWeaponDamage(BASE_ATTACK, MAXDAMAGE, std::max(2.0f, (maxDmg / dmgMod) - meleeAPBonus));
+            creature->SetBaseWeaponDamage(OFF_ATTACK, MINDAMAGE, std::max(1.0f, (minOffDmg / dmgMod) - offAPBonus));
+            creature->SetBaseWeaponDamage(OFF_ATTACK, MAXDAMAGE, std::max(2.0f, (maxOffDmg / dmgMod) - offAPBonus));
+            creature->SetBaseWeaponDamage(RANGED_ATTACK, MINDAMAGE, std::max(1.0f, (minRangedDmg / dmgMod) - rangedAPBonus));
+            creature->SetBaseWeaponDamage(RANGED_ATTACK, MAXDAMAGE, std::max(2.0f, (maxRangedDmg / dmgMod) - rangedAPBonus));
 
             creature->SetUInt32Value(UNIT_FIELD_ATTACK_POWER, baseStats.MeleeAP);
             creature->SetUInt32Value(UNIT_FIELD_RANGED_ATTACK_POWER, baseStats.RangedAP);
@@ -1519,7 +1522,7 @@ void Global_Scaling_UnitScript::ModifySpellDamageTaken(Unit* target, Unit* attac
     uint64 guid = creature->GetGUID().GetRawValue();
     bool isScaled = false;
     {
-        std::unique_lock<std::shared_mutex> lock(GlobalScaleConfig::CacheMutex);
+        std::shared_lock<std::shared_mutex> lock(GlobalScaleConfig::CacheMutex);
         isScaled = GlobalScaleConfig::scaledCreatures.count(guid) > 0;
     }
     if (!isScaled && creature->IsAlive() && !creature->isDead())
@@ -1534,7 +1537,7 @@ void Global_Scaling_UnitScript::ModifySpellDamageTaken(Unit* target, Unit* attac
     float intrinsicSpellScale = 1.0f;
     uint32 nativeLevel = 1;
     {
-        std::unique_lock<std::shared_mutex> lock(GlobalScaleConfig::CacheMutex);
+        std::shared_lock<std::shared_mutex> lock(GlobalScaleConfig::CacheMutex);
         auto itCache = GlobalScaleConfig::creatureBaseStatsCache.find(guid);
         if (itCache != GlobalScaleConfig::creatureBaseStatsCache.end())
         {
@@ -1578,6 +1581,7 @@ void Global_Scaling_UnitScript::ModifySpellDamageTaken(Unit* target, Unit* attac
 
     if (spellInfo)
     {
+        // Ignore reflected player spells (e.g. Obsidian Sentinel reflecting a high-rank player spell)
         if (!hasCustomOverride)
         {
             if (nativeLevel < 72 && spellInfo->SpellLevel > nativeLevel + 8)
@@ -1590,6 +1594,7 @@ void Global_Scaling_UnitScript::ModifySpellDamageTaken(Unit* target, Unit* attac
 
         for (uint8 i = 0; i < MAX_SPELL_EFFECTS; ++i)
         {
+            // Never scale percentage-based damage spells
             if (spellInfo->Effects[i].Effect == SPELL_EFFECT_HEALTH_LEECH ||
                 spellInfo->Effects[i].ApplyAuraName == SPELL_AURA_PERIODIC_DAMAGE_PERCENT)
             {
@@ -1663,7 +1668,7 @@ void Global_Scaling_UnitScript::ModifyPeriodicDamageAurasTick(Unit* target, Unit
     uint64 guid = creature->GetGUID().GetRawValue();
     bool isScaled = false;
     {
-        std::unique_lock<std::shared_mutex> lock(GlobalScaleConfig::CacheMutex);
+        std::shared_lock<std::shared_mutex> lock(GlobalScaleConfig::CacheMutex);
         isScaled = GlobalScaleConfig::scaledCreatures.count(guid) > 0;
     }
     if (!isScaled && creature->IsAlive() && !creature->isDead())
@@ -1678,7 +1683,7 @@ void Global_Scaling_UnitScript::ModifyPeriodicDamageAurasTick(Unit* target, Unit
     float intrinsicDoTScale = 1.0f;
     uint32 nativeLevel = 1;
     {
-        std::unique_lock<std::shared_mutex> lock(GlobalScaleConfig::CacheMutex);
+        std::shared_lock<std::shared_mutex> lock(GlobalScaleConfig::CacheMutex);
         auto itCache = GlobalScaleConfig::creatureBaseStatsCache.find(guid);
         if (itCache != GlobalScaleConfig::creatureBaseStatsCache.end())
         {
@@ -1790,7 +1795,7 @@ void Global_Scaling_UnitScript::ModifyHealReceived(Unit* target, Unit* healer, u
     uint64 guid = creature->GetGUID().GetRawValue();
     bool isScaled = false;
     {
-        std::unique_lock<std::shared_mutex> lock(GlobalScaleConfig::CacheMutex);
+        std::shared_lock<std::shared_mutex> lock(GlobalScaleConfig::CacheMutex);
         isScaled = GlobalScaleConfig::scaledCreatures.count(guid) > 0;
     }
     if (!isScaled && creature->IsAlive() && !creature->isDead())
@@ -1804,7 +1809,7 @@ void Global_Scaling_UnitScript::ModifyHealReceived(Unit* target, Unit* healer, u
 
     float intrinsicHealScale = 1.0f;
     {
-        std::unique_lock<std::shared_mutex> lock(GlobalScaleConfig::CacheMutex);
+        std::shared_lock<std::shared_mutex> lock(GlobalScaleConfig::CacheMutex);
         auto itCache = GlobalScaleConfig::creatureBaseStatsCache.find(guid);
         if (itCache != GlobalScaleConfig::creatureBaseStatsCache.end())
             intrinsicHealScale = itCache->second.IntrinsicHealScale;
