@@ -32,6 +32,7 @@ Creatures from earlier expansions have fundamentally different base stat budgets
 * **Periodic Damage (DoTs)**
 * **Healing Spells** (percentage-based heals like `SPELL_EFFECT_HEAL_PCT` are automatically excluded so bosses don't overheal)
 * **Armor** (automatically capped at `10,643` unless the creature's native armor is already higher) & **Spell Resistances**
+* **Gold**
 
 ### 2. Low-Level Floor & Late-Expansion Catch-Up System
 * **Minimum Native Level Floor (`MinNativeLevel = 14`):** Prevents level 1–13 starter-zone creatures from exploding in stats due to extreme `80 / 1` level ratios by smoothing their baseline ratio.
@@ -66,6 +67,15 @@ Fine-tune specific encounters without recompiling:
   * **Instances (`SizeOverride.Maps`):** Multiplies the visual model scale of trash mobs and bosses per dungeon/raid instance (`MapID`). In vanilla World of Warcraft, low-level dungeons (such as *Ragefire Chasm* or *The Deadmines*) natively feature much smaller creature and boss models compared to high-level endgame instances. This setting lets you scale up their physical presence so they look as intimidating as their new Level 80 endgame stats.
   * **Creatures (`SizeOverride.Creatures`):** Multiplies the visual size of a specific creature or boss by its `EntryID`, taking absolute priority over both map-wide and overworld settings.
 
+### 6. Automatic Optional & Mini-Boss Promotion (`ForceBossCreatures`)
+Many Vanilla optional bosses and mini-bosses were originally flagged by Blizzard as standard Elites (`rank = 1`) rather than Dungeon Bosses in `creature_template`.
+* Using `GlobalScaling.ForceBossCreatures`, you can list their Entry IDs so the module automatically promotes them to **`BossNonSkull` (Level 83)** with full boss stat multipliers and **Boss visual scale** — without modifying your SQL database:
+  * **Uldaman:** Obsidian Sentinel (`7023`), Ironaya (`7228`)
+  * **Gnomeregan:** Grubbis (`7359`)
+  * **Maraudon:** Lord Vyletongue (`13233`), Meshlok the Harvester (`13596`)
+  * **Blackrock Depths (BRD):** Lord Roccor (`9025`), Houndmaster Grebmar (`9026`), Pyromancer Loregrain (`9031`),General Angerforge (`9033`), Warder Stilgiss (`9041`), Fineous Darkvire (`9042`), Lord Incendius (`9056`)
+  * **Stratholme:** Postmaster Malown (`11143`)
+  * 
 ---
 
 ## 🛠️ In-Game Commands
