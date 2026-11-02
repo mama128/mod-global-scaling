@@ -37,12 +37,18 @@ Creatures from earlier expansions have fundamentally different base stat budgets
 * **Minimum Native Level Floor (`MinNativeLevel = 14`):** Prevents level 1–13 starter-zone creatures from exploding in stats due to extreme `80 / 1` level ratios by smoothing their baseline ratio.
 * **Late-Expansion Catch-Up (`GlobalScaling.CatchUp`):** Smoothly boosts higher-level overworld mobs in Vanilla (levels 14–60) and TBC (levels 58–70) so endgame zones like Silithus, Eastern Plaguelands, or Netherstorm feel appropriately stronger than early leveling zones.
 
-### 3. Smart Spell & Combat Engine Protections
+### 3. Built-in C++ Combat Safeguards (Anti-One-Shot & Anti-Double-Dipping)
 * **No Double-Dipping on Weapon Spells:** Physical abilities based on weapon damage (`SPELL_EFFECT_WEAPON_DAMAGE`, `NORMALIZED_WEAPON_DMG`, `WEAPON_PERCENT_DAMAGE`) automatically scale via the creature's scaled Melee Damage and Attack Power and are not double-multiplied by the spell hook.
 * **Player Pet & Guardian Protection:** Player-owned pets, summons, mind-controlled units, and guardians are strictly ignored so player damage is never artificially inflated.
 * **Invisible Trigger Protection:** Traps, poison clouds, and invisible caster triggers (`Rank.Trigger`) scale their spell/DoT damage without having their level or visual model size altered.
 * **Native Level Preservation:** Creatures whose native spawn level is already higher than the calculated target level will never be down-scaled, preserving their native `WeaponSkill` (`Level * 5`) against tanks.
 * **Dynamic Combat & Respawn Tracking:** Periodic checks and combat hooks ensure that tank debuffs on pull (e.g., *Demoralizing Shout*, *Thunder Clap*), phase shifts, or creature respawns never revert a creature's melee damage or level.
+* **Weapon-Based Ability Normalization (e.g., *Aimed Shot*):** In AzerothCore, `Creature::CalculateMinMaxDamage` multiplies `BaseWeaponDamage` by `cInfo->DamageModifier`. The module automatically divides `BaseWeaponDamage` by `DamageModifier` when applying scaled weapon damage, preventing Heroic TBC/Vanilla archers and warriors from double-dipping and hitting for 200k+ on weapon-damage spells.
+* **Enemy Pet & Summon Compensation:** In AzerothCore, `Guardian::InitStatsForLevel` automatically scales summoned enemy pets (such as Murloc *Crawlers*) to their master's level (80) using a linear formula. The module detects level-scaled summons, bypasses redundant Catch-Up bonuses, and divides out the core's linear factor so enemy pets deal balanced melee and spell damage.
+* **Reflected Spell Protection:** Automatically detects and ignores high-rank player spells reflected back by low-level creatures (e.g., *Obsidian Sentinel* or *Thorns*/*Fire Shield* effects) when `spellInfo->SpellLevel > nativeLevel + 8` or when `SPELL_AURA_REFLECT_SPELLS` is active.
+* **Percentage-Based Damage Exclusion:** Spells dealing damage based on max health percentage (`SPELL_AURA_PERIODIC_DAMAGE_PERCENT` / `SPELL_EFFECT_HEALTH_LEECH`) are automatically excluded from spell multipliers.
+* **Master & Difficulty Entry Support:** Automatically checks both `creature->GetEntry()` (Master Wowhead ID) and `cInfo->Entry` (`difficulty_entry_1/2/3`) for `CustomCreatures`, `ExcludedCreatures`, `ForceBossCreatures`, and `SizeOverride.Creatures`.
+* **Corpse & Loot Protection:** Strict `IsAlive() && !isDead()` checks across all events and periodic timers prevent dead creatures from being reset to 1 HP and breaking skinning or loot tables.
 
 ### 4. Per-Instance, Per-Difficulty & Per-Rank Granularity
 Every single dungeon and raid map ID in Vanilla, TBC, and WotLK is pre-configured in `mod_global_scaling.conf.dist` with 5 distinct rank tiers per difficulty (`0` = Normal / 10M, `1` = Heroic / 25M / 40M, `2` = 10M Heroic, `3` = 25M Heroic):
