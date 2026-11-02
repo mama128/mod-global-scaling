@@ -66,7 +66,8 @@ Fine-tune specific encounters without recompiling:
   * **Overworld (`SizeOverride.Overworld`):** Scales overworld creatures per continent map ID (`MapID`) across 5 distinct ranks: `Trash`, `Elite`, `RareElite`, `Rare`, and `SkullBoss`.
   * **Instances (`SizeOverride.Maps`):** Multiplies the visual model scale of trash mobs and bosses per dungeon/raid instance (`MapID`). In vanilla World of Warcraft, low-level dungeons (such as *Ragefire Chasm* or *The Deadmines*) natively feature much smaller creature and boss models compared to high-level endgame instances. This setting lets you scale up their physical presence so they look as intimidating as their new Level 80 endgame stats.
   * **Creatures (`SizeOverride.Creatures`):** Multiplies the visual size of a specific creature or boss by its `EntryID`, taking absolute priority over both map-wide and overworld settings.
-
+  * **Automatic Friendly & Reputation NPC Protection (`SizeOverride.AffectFriendlyNPCs = 0`):** By default, friendly Alliance/Horde NPCs, Sanctuary/City citizens, Quest Givers, Vendors, Trainers, Guards, and Reputation-gated factions (e.g., *Timbermaw Hold*, *Sons of Hodir*, *The Oracles*, *Sporeggar*, *Aldor/Scryers*) keep their original `1.0x` visual size while still receiving full level 80 combat stat scaling. Hostile monsters—including enemies killed for reputation—are resized normally.
+* 
 ### 6. Automatic Optional & Mini-Boss Promotion (`ForceBossCreatures`)
 Many Vanilla optional bosses and mini-bosses were originally flagged by Blizzard as standard Elites (`rank = 1`) rather than Dungeon Bosses in `creature_template`.
 * Using `GlobalScaling.ForceBossCreatures`, you can list their Entry IDs so the module automatically promotes them to **`BossNonSkull` (Level 83)** with full boss stat multipliers and **Boss visual scale** — without modifying your SQL database.
@@ -119,10 +120,17 @@ The module provides the `.gscaling` command suite:
 
 ---
 
-## 🛠️ Troubleshooting & Known Edge Cases
+## Troubleshooting & FAQ
 
 ### Enemy-Summoned Pets & Minions (High Ability Damage)
 * **The Issue:** A tiny handful of low-level NPCs summon true "pet" units (such as the Westfall Murloc's summoned *Crawler* pet) whose special abilities are hardcoded in the DBC to scale off **Attack Power (AP)** or **Spell Power (SP)**. Because non-player creatures in WoW do not natively build SP/AP gear stats and native AP is preserved to prevent poison/ability double-dipping their pet specific spells may hit for rather high values even though their health and white melee hits scale properly. *(Note: This only affects true pet-type summons, not standard boss adds).*
 * **The Fix:** Boost the pet's `Spell` or `Damage` multiplier directly in `GlobalScaling.CustomCreatures` (or target its specific ability via `GlobalScaling.CustomDamageSpells`).
+
+* **Console Warning: `Missing property GlobalScaling... in config file`**
+  Make sure you copied any newly added configuration lines (`GlobalScaling.ForceBossCreatures` and `GlobalScaling.SizeOverride.AffectFriendlyNPCs`) into your active **`configs/modules/mod_global_scaling.conf`** file inside your build directory (not just `mod_global_scaling.conf.dist` in the source folder).
+* **How do I check which multipliers a mob is using in-game?**
+  Select the creature and type `.gscaling status`. It will display both its Master Entry (`creature->GetEntry()`) and Difficulty Entry (`cInfo->Entry`), its active environment (`Overworld`, `Dungeon`, `Raid`, or `[CUSTOM MOB]`), and its final calculated multipliers.
+* **How do I reload changes made to `mod_global_scaling.conf` without restarting the server?**
+  Run `.reload config` followed by `.gscaling update` in-game to immediately apply your new multipliers and visual sizes to all nearby creatures.
 
 ### Balancing is still underway, however, it is possible that the value I have chosen does not align with the level of difficulty you wish to take on. I focus on ICC-Halion gear level.
