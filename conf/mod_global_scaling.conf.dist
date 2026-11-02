@@ -18,7 +18,7 @@ GlobalScaling.ExcludedMaps = ""
 GlobalScaling.ExcludedCreatures = ""
 
 # Promotes untagged optional dungeon bosses & mini-bosses to BossNonSkull (Level 83 + Boss Scale)
-GlobalScaling.ForceBossCreatures = "7023,7359,13233,13596,9025,9026,9031,9041,9042,9056,9033,11143,17307,17536"
+GlobalScaling.ForceBossCreatures = "7023,7359,7603,7604,7605,7606,7607,7608,7797,13233,13596,9025,9026,9031,9041,9042,9056,9033,11143,17307,17536"
 
 # ==============================================================================
 # CATCH-UP (LATE EXPANSION BOOST)
