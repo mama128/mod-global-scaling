@@ -75,7 +75,7 @@ Many Vanilla optional bosses and mini-bosses were originally flagged by Blizzard
   * **Maraudon:** Lord Vyletongue (`13233`), Meshlok the Harvester (`13596`)
   * **Blackrock Depths (BRD):** Lord Roccor (`9025`), Houndmaster Grebmar (`9026`), Pyromancer Loregrain (`9031`),General Angerforge (`9033`), Warder Stilgiss (`9041`), Fineous Darkvire (`9042`), Lord Incendius (`9056`)
   * **Stratholme:** Postmaster Malown (`11143`)
-  * 
+ 
 ---
 
 ## 🛠️ In-Game Commands
