@@ -22,6 +22,7 @@
 #include "Map.h"
 #include "Chat.h"
 #include "SpellInfo.h"
+#include "DBCStores.h"
 #include "Log.h"
 
 using namespace Acore::ChatCommands;
@@ -108,6 +109,7 @@ namespace GlobalScaleConfig
 
     bool SizeOverrideMapsEnable = true;
     bool SizeOverrideOverworldEnable = true;
+    bool SizeOverrideAffectFriendlyNPCs = false;
 
     std::map<uint32, MapSizeData> SizeOverrideMaps;
     std::map<uint32, OverworldSizeData> SizeOverrideOverworld;
@@ -294,6 +296,7 @@ namespace GlobalScaleConfig
 
         SizeOverrideMapsEnable = sConfigMgr->GetOption<bool>("GlobalScaling.SizeOverride.Maps.Enable", true);
         SizeOverrideOverworldEnable = sConfigMgr->GetOption<bool>("GlobalScaling.SizeOverride.Overworld.Enable", true);
+        SizeOverrideAffectFriendlyNPCs = sConfigMgr->GetOption<bool>("GlobalScaling.SizeOverride.AffectFriendlyNPCs", false);
 
         ExpansionExponents[0] = {
             sConfigMgr->GetOption<float>("GlobalScaling.Exponent.Vanilla.HP", 2.05f),
@@ -448,6 +451,40 @@ namespace GlobalScaleConfig
             if (owner->IsPlayer()) return true;
             if (owner != unit) return IsPlayerOwnedOrControlled(owner);
         }
+        return false;
+    }
+
+    bool IsFriendlyOrCityNPC(Creature const* creature, CreatureTemplate const* cInfo)
+    {
+        if (!creature || !cInfo)
+            return false;
+
+        // 1. Interactive NPCs (Quest Givers, Vendors, Trainers, Gossip, Innkeepers, Flight Masters, Bankers, etc.)
+        if (cInfo->npcflag != 0 || creature->GetUInt32Value(UNIT_NPC_FLAGS) != 0)
+            return true;
+
+        // 2. Civilians & City Guards
+        if (creature->IsCivilian() || creature->IsGuard() || ((cInfo->flags_extra & 0x00008002) != 0))
+            return true;
+
+        if (FactionTemplateEntry const* factionTemplate = creature->GetFactionTemplateEntry())
+        {
+            // 3. Factions affiliated with or friendly to Players (1), Alliance (2), or Horde (4) -> Mask 7
+            if ((factionTemplate->ourMask & 7) != 0 || (factionTemplate->friendlyMask & 7) != 0)
+                return true;
+
+            // 4. Reputation-gated factions that can become friendly (e.g., Timbermaw Hold, Sons of Hodir, Oracles, Sporeggar, Aldor/Scryers).
+            // Excludes permanently hostile enemy factions (hostileMask & 7 != 0) and Syndicate (70).
+            if (factionTemplate->faction != 0 && factionTemplate->faction != 70 && (factionTemplate->hostileMask & 7) == 0)
+            {
+                if (FactionEntry const* factionEntry = sFactionStore.LookupEntry(factionTemplate->faction))
+                {
+                    if (factionEntry->CanHaveReputation())
+                        return true;
+                }
+            }
+        }
+
         return false;
     }
 
@@ -939,7 +976,7 @@ namespace GlobalScaleConfig
             {
                 scaleMult = itSizeCreature->second;
             }
-            else
+            else if (SizeOverrideAffectFriendlyNPCs || !IsFriendlyOrCityNPC(creature, cInfo))
             {
                 uint32 mapId = creature->GetMap()->GetId();
                 if (creature->GetMap()->IsDungeon() || creature->GetMap()->IsRaid())
