@@ -27,7 +27,7 @@ When installing this module with the default configuration (`mod_global_scaling.
 ### 1. Mathematical Exponential Scaling per Expansion
 Creatures from earlier expansions have fundamentally different base stat budgets in the database compared to WotLK creatures. The module calculates a level ratio (`TargetLevel / NativeLevel`) and applies customizable **exponential curves (`std::pow`)** separately for **Vanilla**, **TBC**, and **WotLK** across 7 distinct stat categories:
 * **Health (HP)** & **Mana**
-* **Melee / Ranged / Off-Hand Weapon Damage** & **Attack Power**
+* **Melee / Ranged / Off-Hand Weapon Damage** & **Attack Power Ability**
 * **Direct Spell Damage**
 * **Periodic Damage (DoTs)**
 * **Healing Spells** (percentage-based heals like `SPELL_EFFECT_HEAL_PCT` are automatically excluded so bosses don't overheal)
