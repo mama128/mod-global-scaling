@@ -16,7 +16,7 @@ GlobalScaling.UpdateDistance = 150.0
 
 GlobalScaling.ExcludedMaps = ""
 GlobalScaling.ExcludedCreatures = ""
-GlobalScaling.ForceBossCreatures = "7023,7228,7359,13233,13596,9025,9026,9031,9041,9042,9056,9033,11143"
+GlobalScaling.ForceBossCreatures = "7023,7359,13233,13596,9025,9026,9031,9041,9042,9056,9033,11143,17307,17536"
 
 # ==============================================================================
 # CATCH-UP (LATE EXPANSION BOOST)
