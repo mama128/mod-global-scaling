@@ -69,12 +69,7 @@ Fine-tune specific encounters without recompiling:
 
 ### 6. Automatic Optional & Mini-Boss Promotion (`ForceBossCreatures`)
 Many Vanilla optional bosses and mini-bosses were originally flagged by Blizzard as standard Elites (`rank = 1`) rather than Dungeon Bosses in `creature_template`.
-* Using `GlobalScaling.ForceBossCreatures`, you can list their Entry IDs so the module automatically promotes them to **`BossNonSkull` (Level 83)** with full boss stat multipliers and **Boss visual scale** — without modifying your SQL database:
-  * **Uldaman:** Obsidian Sentinel (`7023`), Ironaya (`7228`)
-  * **Gnomeregan:** Grubbis (`7359`)
-  * **Maraudon:** Lord Vyletongue (`13233`), Meshlok the Harvester (`13596`)
-  * **Blackrock Depths (BRD):** Lord Roccor (`9025`), Houndmaster Grebmar (`9026`), Pyromancer Loregrain (`9031`),General Angerforge (`9033`), Warder Stilgiss (`9041`), Fineous Darkvire (`9042`), Lord Incendius (`9056`)
-  * **Stratholme:** Postmaster Malown (`11143`)
+* Using `GlobalScaling.ForceBossCreatures`, you can list their Entry IDs so the module automatically promotes them to **`BossNonSkull` (Level 83)** with full boss stat multipliers and **Boss visual scale** — without modifying your SQL database.
  
 ---
 
