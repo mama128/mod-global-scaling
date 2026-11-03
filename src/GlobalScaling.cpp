@@ -1631,9 +1631,12 @@ void Global_Scaling_UnitScript::ModifySpellDamageTaken(Unit* target, Unit* attac
 
         for (uint8 i = 0; i < MAX_SPELL_EFFECTS; ++i)
         {
-            // Never scale percentage-based damage spells
-            if (spellInfo->Effects[i].Effect == SPELL_EFFECT_HEALTH_LEECH ||
-                spellInfo->Effects[i].ApplyAuraName == SPELL_AURA_PERIODIC_DAMAGE_PERCENT)
+            // Never scale percentage-based health damage or Mana Burn / Power Drain effects
+            if (!hasCustomOverride &&
+                (spellInfo->Effects[i].Effect == SPELL_EFFECT_POWER_BURN ||
+                 spellInfo->Effects[i].Effect == SPELL_EFFECT_POWER_DRAIN ||
+                 spellInfo->Effects[i].ApplyAuraName == SPELL_AURA_PERIODIC_DAMAGE_PERCENT ||
+                 spellInfo->Effects[i].ApplyAuraName == SPELL_AURA_PERIODIC_MANA_LEECH))
             {
                 return;
             }
@@ -1760,7 +1763,12 @@ void Global_Scaling_UnitScript::ModifyPeriodicDamageAurasTick(Unit* target, Unit
 
         for (uint8 i = 0; i < MAX_SPELL_EFFECTS; ++i)
         {
-            if (spellInfo->Effects[i].ApplyAuraName == SPELL_AURA_PERIODIC_DAMAGE_PERCENT)
+            // Never scale percentage-based periodic health damage or periodic Mana Leech / Power Burn effects
+            if (!hasCustomOverride &&
+                (spellInfo->Effects[i].ApplyAuraName == SPELL_AURA_PERIODIC_DAMAGE_PERCENT ||
+                 spellInfo->Effects[i].ApplyAuraName == SPELL_AURA_PERIODIC_MANA_LEECH ||
+                 spellInfo->Effects[i].Effect == SPELL_EFFECT_POWER_BURN ||
+                 spellInfo->Effects[i].Effect == SPELL_EFFECT_POWER_DRAIN))
             {
                 return;
             }
@@ -1816,7 +1824,20 @@ void Global_Scaling_UnitScript::ModifyPeriodicDamageAurasTick(Unit* target, Unit
 void Global_Scaling_UnitScript::ModifyHealReceived(Unit* target, Unit* healer, uint32& addhealth, SpellInfo const* spellInfo)
 {
     if (!healer || !target) return;
-    if (spellInfo && spellInfo->HasEffect(SPELL_EFFECT_HEAL_PCT)) return;
+
+    if (spellInfo)
+    {
+        // Exclude percentage heals and Health Leech / Drain Life heals (whose heal amount is already scaled from the damage dealt)
+        for (uint8 i = 0; i < MAX_SPELL_EFFECTS; ++i)
+        {
+            if (spellInfo->Effects[i].Effect == SPELL_EFFECT_HEAL_PCT ||
+                spellInfo->Effects[i].Effect == SPELL_EFFECT_HEALTH_LEECH ||
+                spellInfo->Effects[i].ApplyAuraName == SPELL_AURA_PERIODIC_LEECH)
+            {
+                return;
+            }
+        }
+    }
     
     Creature* creature = healer->ToCreature();
     if (!creature)
