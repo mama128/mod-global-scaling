@@ -37,7 +37,7 @@ GlobalScaling.CatchUp.TBC.MaxBonus = 1
 # ==============================================================================
 # EXPONENTIAL CURVES (MATH EXPONENT PER EXPANSION)
 # ==============================================================================
-GlobalScaling.Exponent.Vanilla.HP = 2.00
+GlobalScaling.Exponent.Vanilla.HP = 2.10
 GlobalScaling.Exponent.Vanilla.Mana = 1.70
 GlobalScaling.Exponent.Vanilla.Damage = 1.76
 GlobalScaling.Exponent.Vanilla.Spell = 1.60
@@ -179,7 +179,7 @@ GlobalScaling.Rank.Trigger.DoT = 1.0
 # identified by its Entry ID, regardless of its zone.
 # Format: "EntryID BaseLvl HP Mana Dmg Spell Armor Res Gold Heal DoT"
 # Example: Adjust a specific boss (e.g., ID 18728) :
-GlobalScaling.CustomCreatures = "18728 83 25.0 10.0 2.5 2.5 1.0 1.0 5.0 1.5 1.5,17711 83 28.0 10.0 2.6 2.6 1.0 1.0 5.0 1.5 1.5,6109 83 22.0 10.0 2.2 2.2 1.0 1.0 5.0 1.5 1.5,18338 83 22.0 10.0 2.2 2.2 1.0 1.0 5.0 1.5 1.5,14887 83 24.0 10.0 2.4 2.4 1.0 1.0 5.0 1.5 1.5,14888 83 24.0 10.0 2.4 2.4 1.0 1.0 5.0 1.5 1.5,14889 83 24.0 10.0 2.4 2.4 1.0 1.0 5.0 1.5 1.5,14890 83 24.0 10.0 2.4 2.4 1.0 1.0 5.0 1.5 1.5"
+GlobalScaling.CustomCreatures = "18728 83 35.0 10.0 2.5 2.5 1.0 1.0 5.0 1.5 1.5,17711 83 20.0 10.0 2.6 2.6 1.0 1.0 5.0 1.5 1.5,6109 83 22.0 10.0 2.2 2.2 1.0 1.0 5.0 1.5 1.5,18338 83 22.0 10.0 2.2 2.2 1.0 1.0 5.0 1.5 1.5,14887 83 18.0 10.0 2.4 2.4 1.0 1.0 5.0 1.5 1.5,14888 83 18.0 10.0 2.4 2.4 1.0 1.0 5.0 1.5 1.5,14889 83 18.0 10.0 2.4 2.4 1.0 1.0 5.0 1.5 1.5,14890 83 18.0 10.0 2.4 2.4 1.0 1.0 5.0 1.5 1.5"
 
 # 2. GlobalScaling.CustomHealingSpells
 # Description: Allows applying an exception multiplier to a specific direct 
