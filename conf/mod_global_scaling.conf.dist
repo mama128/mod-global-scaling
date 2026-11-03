@@ -4691,7 +4691,7 @@ GlobalScaling.Instance.309.0.Rank.BossNonSkull.Heal = 2.5
 GlobalScaling.Instance.309.0.Rank.BossNonSkull.DoT = 2.5
 
 GlobalScaling.Instance.309.0.Rank.BossSkull.LevelBonus = 3
-GlobalScaling.Instance.309.0.Rank.BossSkull.HP = 7.5
+GlobalScaling.Instance.309.0.Rank.BossSkull.HP = 20
 GlobalScaling.Instance.309.0.Rank.BossSkull.Mana = 1.5
 GlobalScaling.Instance.309.0.Rank.BossSkull.Damage = 4.0
 GlobalScaling.Instance.309.0.Rank.BossSkull.Spell = 4.0
@@ -4748,7 +4748,7 @@ GlobalScaling.Instance.509.0.Rank.BossNonSkull.Heal = 2.5
 GlobalScaling.Instance.509.0.Rank.BossNonSkull.DoT = 2.5
 
 GlobalScaling.Instance.509.0.Rank.BossSkull.LevelBonus = 3
-GlobalScaling.Instance.509.0.Rank.BossSkull.HP = 7.5
+GlobalScaling.Instance.509.0.Rank.BossSkull.HP = 18
 GlobalScaling.Instance.509.0.Rank.BossSkull.Mana = 1.5
 GlobalScaling.Instance.509.0.Rank.BossSkull.Damage = 4.0
 GlobalScaling.Instance.509.0.Rank.BossSkull.Spell = 4.0
@@ -4810,8 +4810,8 @@ GlobalScaling.Instance.409.1.Rank.BossNonSkull.Heal = 2.5
 GlobalScaling.Instance.409.1.Rank.BossNonSkull.DoT = 2.5
 
 GlobalScaling.Instance.409.1.Rank.BossSkull.LevelBonus = 3
-GlobalScaling.Instance.409.1.Rank.BossSkull.HP = 9.0
-GlobalScaling.Instance.409.1.Rank.BossSkull.Mana = 1.5
+GlobalScaling.Instance.409.1.Rank.BossSkull.HP = 42
+GlobalScaling.Instance.409.1.Rank.BossSkull.Mana = 5.5
 GlobalScaling.Instance.409.1.Rank.BossSkull.Damage = 4.8
 GlobalScaling.Instance.409.1.Rank.BossSkull.Spell = 4.8
 GlobalScaling.Instance.409.1.Rank.BossSkull.Armor = 1.0
@@ -4867,8 +4867,8 @@ GlobalScaling.Instance.469.1.Rank.BossNonSkull.Heal = 2.5
 GlobalScaling.Instance.469.1.Rank.BossNonSkull.DoT = 2.5
 
 GlobalScaling.Instance.469.1.Rank.BossSkull.LevelBonus = 3
-GlobalScaling.Instance.469.1.Rank.BossSkull.HP = 8.6
-GlobalScaling.Instance.469.1.Rank.BossSkull.Mana = 1.5
+GlobalScaling.Instance.469.1.Rank.BossSkull.HP = 41
+GlobalScaling.Instance.469.1.Rank.BossSkull.Mana = 5.5
 GlobalScaling.Instance.469.1.Rank.BossSkull.Damage = 4.5
 GlobalScaling.Instance.469.1.Rank.BossSkull.Spell = 4.5
 GlobalScaling.Instance.469.1.Rank.BossSkull.Armor = 1.0
@@ -4924,8 +4924,8 @@ GlobalScaling.Instance.531.1.Rank.BossNonSkull.Heal = 2.5
 GlobalScaling.Instance.531.1.Rank.BossNonSkull.DoT = 2.5
 
 GlobalScaling.Instance.531.1.Rank.BossSkull.LevelBonus = 3
-GlobalScaling.Instance.531.1.Rank.BossSkull.HP = 8.2
-GlobalScaling.Instance.531.1.Rank.BossSkull.Mana = 1.5
+GlobalScaling.Instance.531.1.Rank.BossSkull.HP = 40
+GlobalScaling.Instance.531.1.Rank.BossSkull.Mana = 5.5
 GlobalScaling.Instance.531.1.Rank.BossSkull.Damage = 4.2
 GlobalScaling.Instance.531.1.Rank.BossSkull.Spell = 4.2
 GlobalScaling.Instance.531.1.Rank.BossSkull.Armor = 1.0
