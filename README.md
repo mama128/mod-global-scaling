@@ -131,6 +131,11 @@ The module provides the `.gscaling` command suite:
   Make sure you copied any newly added configuration lines (`GlobalScaling.ForceBossCreatures` and `GlobalScaling.SizeOverride.AffectFriendlyNPCs`) into your active **`configs/modules/mod_global_scaling.conf`** file inside your build directory (not just `mod_global_scaling.conf.dist` in the source folder).
 * **How do I check which multipliers a mob is using in-game?**
   Select the creature and type `.gscaling status`. It will display both its Master Entry (`creature->GetEntry()`) and Difficulty Entry (`cInfo->Entry`), its active environment (`Overworld`, `Dungeon`, `Raid`, or `[CUSTOM MOB]`), and its final calculated multipliers.
+  * **Why do creatures on the Isle of Quel'Danas have lower health compared to the rest of TBC, and how do I fix it?**
+  Due to internal DBC/level scaling differences, outdoor mobs on Quel'Danas may scale slightly behind standard Outland zones. If you increase the global TBC exponent (`Exponent.TBC.HP`) to fix Quel'Danas, it will make the rest of TBC too difficult. Instead, target Quel'Danas mobs specifically by adding their Entry IDs to **`GlobalScaling.CustomCreatures`** with a slightly higher HP multiplier (e.g., `1.4`) to bring them up to ~11k HP without affecting the rest of the expansion:
+  ```ini
+  GlobalScaling.CustomCreatures = "QUELDANAS_MOB_ENTRY 80 1.4 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0"
+  ```
 * **How do I reload changes made to `mod_global_scaling.conf` without restarting the server?**
   Run `.reload config` followed by `.gscaling update` in-game to immediately apply your new multipliers and visual sizes to all nearby creatures.
 
