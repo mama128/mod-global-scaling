@@ -12,7 +12,7 @@ Instead of using flat, one-size-fits-all multipliers, this module uses **per-exp
 
 ## 🎯 What to Expect (Design Philosophy & Baselines)
 
-When installing this module with the default configuration (`mod_global_scaling.conf.dist`), players can expect the entire world of Azeroth, Outland, and Northrend to be calibrated around **Tier 10 (Patch 3.3.5a) endgame standards** ( But you're free to balance  however you want with the .conf file. Too easy? Increase the numbers. Too hard? Decrease the numbers, create your own perfect version of the game ):
+When installing this module with the default configuration (`mod_global_scaling.conf.dist`), players can expect the entire world of Azeroth, Outland, and Northrend to be calibrated around **Tier 10 (Patch 3.3.5a) endgame standards** :
 
 * **Overworld Zones (Vanilla, TBC, WotLK):** All eligible creatures (excluding critters and those below the minimum native level floor) are scaled to Level 80+ (+1 for Elites/Rares, +2 for Rare Elites, +3 for Bosses), turning questing zones and outdoor elite areas into max-level endgame zones.
 * **All 5-Man Dungeons (Vanilla, TBC Normal/Heroic, WotLK Normal/Heroic):** Calibrated toward **WotLK Tier 10 Heroic Dungeons** (*Forge of Souls*, *Pit of Saron*, and *Halls of Reflection* Heroic).
@@ -20,6 +20,7 @@ When installing this module with the default configuration (`mod_global_scaling.
 * **25-Man & 40-Man Raids (MC, BWL, AQ40, TBC 25-Man, WotLK 25-Man):** Calibrated toward **Icecrown Citadel 25-Man Heroic / Ruby Sanctum 25-Man Heroic**.
 * **World Bosses (Kazzak, Doomwalker, Azuregos, Dragons of Nightmare):** Individually overridden to Level 83 Skull Bosses tuned for full endgame raid groups.
 
+But you're free to balance  however you want with the .conf file. Too easy? Increase the numbers. Too hard? Decrease the numbers, create your own perfect version of the game !
 ---
 
 ## ✨ Key Features
