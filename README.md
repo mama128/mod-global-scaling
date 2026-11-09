@@ -6,7 +6,8 @@
 
 *⚠️ **Important Note:** This module scales creatures **dynamically in memory** (on-the-fly) as they spawn and enter combat. **It makes zero permanent changes to your server database (SQL)**. If you disable the module or change your configuration, all creatures instantly revert to their native Blizzard default values without requiring a database rollback.*
 
-Instead of using flat, one-size-fits-all multipliers, this module uses **per-expansion exponential curves**, **late-expansion catch-up modifiers**, and **individual per-instance / per-difficulty configurations** so that every piece of content in the game remains relevant, challenging, and mechanically intact at Level 80.
+Instead of using flat, one-size-fits-all multipliers, this module uses **per-expansion exponential curves**, **late-expansion catch-up modifiers**, and **individual per-instance / per-difficulty configurations** so that every piece of content in the game remains relevant, challenging, and mechanically intact at Level 80. 
+For the customization of combat beyond level and statistics, see **`https://github.com/mama128/mod-epic-bosses`**
 
 ---
 
