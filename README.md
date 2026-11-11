@@ -28,7 +28,9 @@ When installing this module with the default configuration (`mod_global_scaling.
 * **25-Man & 40-Man Raids (MC, BWL, AQ40, TBC 25-Man, WotLK 25-Man):** Calibrated toward **Icecrown Citadel 25-Man Heroic / Ruby Sanctum 25-Man Heroic**.
 * **World Bosses (Kazzak, Doomwalker, Azuregos, Dragons of Nightmare):** Individually overridden to Level 83 Skull Bosses tuned for full endgame raid groups.
 
-But you're free to balance  however you want with the .conf file. Too easy? Increase the numbers. Too hard? Decrease the numbers, create your own perfect version of the game !
+
+### Balancing is still underway, however, it is possible that the value I have chosen does not align with the level of difficulty you wish to take on. I focus on ICC-Halion gear level. You're free to balance however you want with the .conf file. Too easy? Increase the numbers. Too hard? Decrease the numbers, create your own perfect version of the game !
+
 ---
 
 ## ✨ Key Features
@@ -148,4 +150,3 @@ The module provides the `.gscaling` command suite:
 * **How do I reload changes made to `mod_global_scaling.conf` without restarting the server?**
   Run `.reload config` followed by `.gscaling update` in-game to immediately apply your new multipliers and visual sizes to all nearby creatures.
 
-### Balancing is still underway, however, it is possible that the value I have chosen does not align with the level of difficulty you wish to take on. I focus on ICC-Halion gear level.
