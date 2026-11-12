@@ -360,7 +360,7 @@ namespace GlobalScaleConfig
             {543, 0}, {543, 1}, {542, 0}, {542, 1}, {540, 0}, {540, 1}, {547, 0}, {547, 1}, {546, 0}, {546, 1}, {545, 0}, {545, 1}, {557, 0}, {557, 1}, {558, 0}, {558, 1}, {556, 0}, {556, 1}, {555, 0}, {555, 1}, {554, 0}, {554, 1}, {553, 0}, {553, 1}, {552, 0}, {552, 1}, {560, 0}, {560, 1}, {269, 0}, {269, 1}, {585, 0}, {585, 1},
             {532, 0}, {568, 0}, {565, 1}, {544, 1}, {548, 1}, {550, 1}, {534, 1}, {564, 1}, {580, 1},
             {574, 0}, {574, 1}, {576, 0}, {576, 1}, {601, 0}, {601, 1}, {619, 0}, {619, 1}, {608, 0}, {608, 1}, {600, 0}, {600, 1}, {604, 0}, {604, 1}, {599, 0}, {599, 1}, {602, 0}, {602, 1}, {575, 0}, {575, 1}, {578, 0}, {578, 1}, {595, 0}, {595, 1}, {650, 0}, {650, 1}, {632, 0}, {632, 1}, {658, 0}, {658, 1}, {668, 0}, {668, 1},
-            {533, 0}, {533, 1}, {590, 0}, {590, 1}, {615, 0}, {615, 1}, {624, 0}, {624, 1}, {603, 0}, {603, 1}, {249, 0}, {249, 1},
+            {533, 0}, {533, 1}, {590, 0}, {590, 1}, {615, 0}, {615, 1}, {616, 0}, {616, 1}, {624, 0}, {624, 1}, {603, 0}, {603, 1}, {249, 0}, {249, 1},
             {649, 0}, {649, 1}, {649, 2}, {649, 3}, {631, 0}, {631, 1}, {631, 2}, {631, 3}, {724, 0}, {724, 1}, {724, 2}, {724, 3}
         };
 
@@ -459,22 +459,17 @@ namespace GlobalScaleConfig
         if (!creature || !cInfo)
             return false;
 
-        // 1. Interactive NPCs (Quest Givers, Vendors, Trainers, Gossip, Innkeepers, Flight Masters, Bankers, etc.)
         if (cInfo->npcflag != 0 || creature->GetUInt32Value(UNIT_NPC_FLAGS) != 0)
             return true;
 
-        // 2. Civilians & City Guards
         if (creature->IsCivilian() || creature->IsGuard() || ((cInfo->flags_extra & 0x00008002) != 0))
             return true;
 
         if (FactionTemplateEntry const* factionTemplate = creature->GetFactionTemplateEntry())
         {
-            // 3. Factions affiliated with or friendly to Players (1), Alliance (2), or Horde (4) -> Mask 7
             if ((factionTemplate->ourMask & 7) != 0 || (factionTemplate->friendlyMask & 7) != 0)
                 return true;
 
-            // 4. Reputation-gated factions that can become friendly (e.g., Timbermaw Hold, Sons of Hodir, Oracles, Sporeggar, Aldor/Scryers).
-            // Excludes permanently hostile enemy factions (hostileMask & 7 != 0) and Syndicate (70).
             if (factionTemplate->faction != 0 && factionTemplate->faction != 70 && (factionTemplate->hostileMask & 7) == 0)
             {
                 if (FactionEntry const* factionEntry = sFactionStore.LookupEntry(factionTemplate->faction))
@@ -521,8 +516,8 @@ namespace GlobalScaleConfig
             ctx.Mults.Heal       = MultGeneral * itCreature->second.Stats.Heal;
             ctx.Rank = { 0, { 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f } };
             
-            ctx.IsRaid = creature->GetMap()->IsRaid();
-            ctx.IsDungeon = !ctx.IsRaid && creature->GetMap()->IsDungeon();
+            ctx.IsRaid = creature->GetMap()->IsRaid() && (mapId != 229);
+            ctx.IsDungeon = !ctx.IsRaid && (creature->GetMap()->IsDungeon() || mapId == 229);
             return ctx;
         }
 
@@ -541,7 +536,7 @@ namespace GlobalScaleConfig
 
         if (itMap != CustomInstanceMaps.end())
         {
-            ctx.IsRaid = creature->GetMap()->IsRaid();
+            ctx.IsRaid = creature->GetMap()->IsRaid() && (mapId != 229);
             ctx.IsDungeon = !ctx.IsRaid;
 
             if (isTrigger) ctx.Rank = itMap->second.Trigger;
@@ -588,7 +583,6 @@ namespace GlobalScaleConfig
 
     bool ApplyScalingToCreature(Creature* creature, bool damageOnly)
     {
-        // Strict alive check: prevents setting 1 HP on dead corpses and breaking loot
         if (!creature || !creature->IsInWorld() || !creature->IsAlive() || creature->isDead())
             return false;
 
@@ -759,7 +753,6 @@ namespace GlobalScaleConfig
 
         if (isSummon)
         {
-            // Guardian::InitStatsForLevel scales HP to currentSpawnLevel, so preserve hpBaseline
             uint32 hpBaseline = currentSpawnLevel > baseStats.NativeLevel ? currentSpawnLevel : baseStats.NativeLevel;
             hpNativeLevel = static_cast<float>(hpBaseline);
         }
@@ -831,15 +824,12 @@ namespace GlobalScaleConfig
         float intrinsicDmgScale   = std::pow(dmgLevelRatio, ctx.Exponents.Damage) * catchUpMod;
         float intrinsicArmorScale = std::pow(hpLevelRatio, ctx.Exponents.Armor);
 
-        // Guardian::InitStatsForLevel already applies linear damage scaling (petlevel * 0.75),
-        // so divide out the linear factor to give summons the exact remaining exponential scaling
         if (isSummon && currentSpawnLevel > baseStats.NativeLevel)
         {
             float coreLinearFactor = std::max<float>(1.0f, static_cast<float>(currentSpawnLevel) / std::max<float>(1.0f, static_cast<float>(baseStats.NativeLevel)));
             intrinsicDmgScale = std::max<float>(1.0f, intrinsicDmgScale / coreLinearFactor);
         }
         
-        // Spells, DoTs, and Heals in DBC are never scaled by Guardian::InitStatsForLevel, so they always use spellLevelRatio
         float intrinsicSpellScale = std::pow(spellLevelRatio, ctx.Exponents.Spell) * catchUpMod;
         float intrinsicDoTScale   = std::pow(spellLevelRatio, ctx.Exponents.DoT) * catchUpMod;
         float intrinsicHealScale  = std::pow(spellLevelRatio, ctx.Exponents.Heal) * catchUpMod;
@@ -946,7 +936,6 @@ namespace GlobalScaleConfig
             float offAPBonus     = (static_cast<float>(baseStats.MeleeAP) / 14.0f) * offAttSpeed * 0.5f;
             float rangedAPBonus  = (static_cast<float>(baseStats.RangedAP) / 14.0f) * rangedAttSpeed;
 
-            // Divide by DamageModifier so Creature::CalculateMinMaxDamage does not double-dip on weapon abilities (e.g. Aimed Shot)
             creature->SetBaseWeaponDamage(BASE_ATTACK, MINDAMAGE, std::max(1.0f, (minDmg / dmgMod) - meleeAPBonus));
             creature->SetBaseWeaponDamage(BASE_ATTACK, MAXDAMAGE, std::max(2.0f, (maxDmg / dmgMod) - meleeAPBonus));
             creature->SetBaseWeaponDamage(OFF_ATTACK, MINDAMAGE, std::max(1.0f, (minOffDmg / dmgMod) - offAPBonus));
@@ -1001,11 +990,11 @@ namespace GlobalScaleConfig
                         {
                             if (creature->isWorldBoss() || cInfo->rank == 3)
                                 scaleMult = itSizeOW->second.SkullBossScale;
-                            else if (cInfo->rank == 4) // Rare
+                            else if (cInfo->rank == 4)
                                 scaleMult = itSizeOW->second.RareScale;
-                            else if (cInfo->rank == 2) // RareElite
+                            else if (cInfo->rank == 2)
                                 scaleMult = itSizeOW->second.RareEliteScale;
-                            else if (cInfo->rank == 1) // Elite
+                            else if (cInfo->rank == 1)
                                 scaleMult = itSizeOW->second.EliteScale;
                             else
                                 scaleMult = itSizeOW->second.TrashScale;
@@ -1213,8 +1202,9 @@ void Global_Scaling_CreatureScript::OnCreatureAddWorld(Creature* creature)
         }
     }
 
-    bool isDungeon = creature->GetMap()->IsNonRaidDungeon();
-    bool isRaid = creature->GetMap()->IsRaid();
+    uint32 mapId = creature->GetMap()->GetId();
+    bool isRaid = creature->GetMap()->IsRaid() && (mapId != 229);
+    bool isDungeon = !isRaid && (creature->GetMap()->IsNonRaidDungeon() || mapId == 229);
     
     bool affectDungeons, affectRaids;
     uint32 instanceDelay;
@@ -1282,8 +1272,9 @@ void Global_Scaling_PlayerScript::OnPlayerMapChanged(Player* player)
     Map* map = player->GetMap();
     if (!map) return;
 
-    bool isDungeon = map->IsNonRaidDungeon();
-    bool isRaid = map->IsRaid();
+    uint32 mapId = map->GetId();
+    bool isRaid = map->IsRaid() && (mapId != 229);
+    bool isDungeon = !isRaid && (map->IsNonRaidDungeon() || mapId == 229);
     
     if (isDungeon && !affectDungeons) return;
     if (isRaid && !affectRaids) return;
@@ -1614,24 +1605,22 @@ void Global_Scaling_UnitScript::ModifySpellDamageTaken(Unit* target, Unit* attac
     }
 
     bool isWeaponBasedSpell = false;
+    bool hasRealPointsPerLevel = false;
     int32 nativeSpellDmg = 0;
 
     if (spellInfo)
     {
-        // Ignore reflected player spells (e.g. Obsidian Sentinel reflecting a high-rank player spell)
-        if (!hasCustomOverride)
+        if (!hasCustomOverride && spellInfo->SpellFamilyName != SPELLFAMILY_GENERIC)
         {
-            if (nativeLevel < 72 && spellInfo->SpellLevel > nativeLevel + 8)
+            if (creature->HasAuraType(SPELL_AURA_REFLECT_SPELLS) || creature->HasAuraType(SPELL_AURA_REFLECT_SPELLS_SCHOOL))
                 return;
 
-            if (spellInfo->SpellFamilyName != SPELLFAMILY_GENERIC &&
-                (creature->HasAuraType(SPELL_AURA_REFLECT_SPELLS) || creature->HasAuraType(SPELL_AURA_REFLECT_SPELLS_SCHOOL)))
+            if (nativeLevel < 70 && spellInfo->SpellLevel >= 71)
                 return;
         }
 
         for (uint8 i = 0; i < MAX_SPELL_EFFECTS; ++i)
         {
-            // Never scale percentage-based health damage or Mana Burn / Power Drain effects
             if (!hasCustomOverride &&
                 (spellInfo->Effects[i].Effect == SPELL_EFFECT_POWER_BURN ||
                  spellInfo->Effects[i].Effect == SPELL_EFFECT_POWER_DRAIN ||
@@ -1660,6 +1649,7 @@ void Global_Scaling_UnitScript::ModifySpellDamageTaken(Unit* target, Unit* attac
 
                 if (spellInfo->Effects[i].RealPointsPerLevel > 0.0f)
                 {
+                    hasRealPointsPerLevel = true;
                     int32 calcLvl = static_cast<int32>(nativeLevel);
                     if (spellInfo->MaxLevel > 0 && calcLvl > static_cast<int32>(spellInfo->MaxLevel))
                         calcLvl = static_cast<int32>(spellInfo->MaxLevel);
@@ -1683,7 +1673,7 @@ void Global_Scaling_UnitScript::ModifySpellDamageTaken(Unit* target, Unit* attac
 
     if ((!isWeaponBasedSpell || hasCustomOverride) && totalSpellMult != 1.0f)
     {
-        if (!hasCustomOverride && nativeSpellDmg > 0 && damage > nativeSpellDmg * 2)
+        if (!hasCustomOverride && hasRealPointsPerLevel && nativeSpellDmg > 0 && damage > nativeSpellDmg * 2)
             damage = static_cast<int32>(nativeSpellDmg * totalSpellMult);
         else
             damage = static_cast<int32>(damage * totalSpellMult);
@@ -1754,16 +1744,16 @@ void Global_Scaling_UnitScript::ModifyPeriodicDamageAurasTick(Unit* target, Unit
     }
 
     bool isWeaponBasedSpell = false;
+    bool hasRealPointsPerLevel = false;
     uint32 nativeTickDmg = 0;
     
     if (spellInfo)
     {
-        if (!hasCustomOverride && nativeLevel < 72 && spellInfo->SpellLevel > nativeLevel + 8)
+        if (!hasCustomOverride && spellInfo->SpellFamilyName != SPELLFAMILY_GENERIC && nativeLevel < 70 && spellInfo->SpellLevel >= 71)
             return;
 
         for (uint8 i = 0; i < MAX_SPELL_EFFECTS; ++i)
         {
-            // Never scale percentage-based periodic health damage or periodic Mana Leech / Power Burn effects
             if (!hasCustomOverride &&
                 (spellInfo->Effects[i].ApplyAuraName == SPELL_AURA_PERIODIC_DAMAGE_PERCENT ||
                  spellInfo->Effects[i].ApplyAuraName == SPELL_AURA_PERIODIC_MANA_LEECH ||
@@ -1791,6 +1781,7 @@ void Global_Scaling_UnitScript::ModifyPeriodicDamageAurasTick(Unit* target, Unit
 
                 if (spellInfo->Effects[i].RealPointsPerLevel > 0.0f)
                 {
+                    hasRealPointsPerLevel = true;
                     int32 calcLvl = static_cast<int32>(nativeLevel);
                     if (spellInfo->MaxLevel > 0 && calcLvl > static_cast<int32>(spellInfo->MaxLevel))
                         calcLvl = static_cast<int32>(spellInfo->MaxLevel);
@@ -1814,7 +1805,7 @@ void Global_Scaling_UnitScript::ModifyPeriodicDamageAurasTick(Unit* target, Unit
 
     if ((!isWeaponBasedSpell || hasCustomOverride) && totalSpellMult != 1.0f)
     {
-        if (!hasCustomOverride && nativeTickDmg > 0 && damage > nativeTickDmg * 2)
+        if (!hasCustomOverride && hasRealPointsPerLevel && nativeTickDmg > 0 && damage > nativeTickDmg * 2)
             damage = static_cast<uint32>(nativeTickDmg * totalSpellMult);
         else
             damage = static_cast<uint32>(damage * totalSpellMult);
@@ -1827,7 +1818,6 @@ void Global_Scaling_UnitScript::ModifyHealReceived(Unit* target, Unit* healer, u
 
     if (spellInfo)
     {
-        // Exclude percentage heals and Health Leech / Drain Life heals (whose heal amount is already scaled from the damage dealt)
         for (uint8 i = 0; i < MAX_SPELL_EFFECTS; ++i)
         {
             if (spellInfo->Effects[i].Effect == SPELL_EFFECT_HEAL_PCT ||
