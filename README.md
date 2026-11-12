@@ -142,11 +142,29 @@ The module provides the `.gscaling` command suite:
   Make sure you copied any newly added configuration lines (`GlobalScaling.ForceBossCreatures` and `GlobalScaling.SizeOverride.AffectFriendlyNPCs`) into your active **`configs/modules/mod_global_scaling.conf`** file inside your build directory (not just `mod_global_scaling.conf.dist` in the source folder).
 * **How do I check which multipliers a mob is using in-game?**
   Select the creature and type `.gscaling status`. It will display both its Master Entry (`creature->GetEntry()`) and Difficulty Entry (`cInfo->Entry`), its active environment (`Overworld`, `Dungeon`, `Raid`, or `[CUSTOM MOB]`), and its final calculated multipliers.
-  * **Why do creatures on the Isle of Quel'Danas have lower health compared to the rest of TBC, and how do I fix it?**
+### Why do creatures on the Isle of Quel'Danas have lower health compared to the rest of TBC, and how do I fix it?
   Due to internal DBC/level scaling differences, outdoor mobs on Quel'Danas may scale slightly behind standard Outland zones. If you increase the global TBC exponent (`Exponent.TBC.HP`) to fix Quel'Danas, it will make the rest of TBC too difficult. Instead, target Quel'Danas mobs specifically by adding their Entry IDs to **`GlobalScaling.CustomCreatures`** with a slightly higher HP multiplier (e.g., `1.4`) to bring them up to ~11k HP without affecting the rest of the expansion:
   ```ini
   GlobalScaling.CustomCreatures = "QUELDANAS_MOB_ENTRY 80 1.4 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0"
-  ```
-* **How do I reload changes made to `mod_global_scaling.conf` without restarting the server?**
+ ```
+### How do I reload changes made to `mod_global_scaling.conf` without restarting the server?**
   Run `.reload config` followed by `.gscaling update` in-game to immediately apply your new multipliers and visual sizes to all nearby creatures.
 
+### Why do certain bosses (e.g., Noxxion, Lord Incendius, Pandemonius) deal massive melee auto-attack damage?
+
+**Symptom:**
+Specific bosses deal 2.5x to 3x more melee damage than other bosses in the same instance, even though they share the exact same map `Damage` multiplier.
+
+**Cause:**
+In AzerothCore (`creature_template.dmgschool != 0`), a few elemental bosses deal pure elemental damage (Nature, Fire, Frost, or Shadow) on their melee auto-attacks instead of physical damage (`SPELL_SCHOOL_NORMAL`).
+* Standard physical bosses have their auto-attacks mitigated by **~65% to 70%** against a level 80 tank's armor, so instance `Damage` multipliers are calibrated higher to compensate for armor reduction.
+* Elemental melee auto-attacks **completely bypass armor (0% physical mitigation)**. When they inherit the standard instance `Damage` multiplier, the tank takes the raw unmitigated value on every swing.
+
+**Solution:**
+To preserve their unique elemental mechanics (encouraging players to use Nature/Fire/Frost/Shadow Resistance buffs, totems, auras, or gear) without letting them one-shot tanks, assign them a dedicated `Dmg` multiplier in `GlobalScaling.CustomCreatures` inside `mod_global_scaling.conf` (typically **40% to 50%** of the instance's standard boss `Damage` multiplier):
+
+```ini
+# Format: "EntryID BaseLvl HP Mana Dmg Spell Armor Res Gold Heal DoT"
+# Example for Noxxion (13282), Lord Incendius (9017), Pyroguard Emberseer (9816),
+# Hydrospawn (13280), Baron Geddon (12056), Viscidus (15299), Pandemonius N/H (18341, 20604), and Hydross (21216):
+GlobalScaling.CustomCreatures = "13282 83 19.0 7.0 12.0 5.5 1.0 1.0 2.0 5.5 3.0,9017 83 17.0 7.0 10.5 4.5 1.0 1.0 2.0 4.5 2.6,9816 83 16.0 7.0 9.5 4.0 1.0 1.0 2.0 4.0 2.5,13280 83 16.0 7.0 10.0 4.0 1.0 1.0 2.0 4.0 2.5,12056 83 85.0 5.5 7.5 2.5 1.0 1.0 2.5 2.5 1.8,15299 83 55.0 5.5 6.5 2.0 1.0 1.0 2.5 2.0 1.5,18341 83 12.0 7.0 2.8 3.0 1.0 1.0 2.0 3.0 2.0,20604 83 9.0 7.0 2.6 3.0 1.0 1.0 2.0 3.0 2.0,21216 83 16.0 1.5 2.2 2.0 1.0 1.0 2.5 2.0 1.5"
