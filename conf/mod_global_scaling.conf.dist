@@ -182,7 +182,7 @@ GlobalScaling.Rank.Trigger.DoT = 1.0
 # identified by its Entry ID, regardless of its zone.
 # Format: "EntryID BaseLvl HP Mana Dmg Spell Armor Res Gold Heal DoT"
 # Example: Adjust a specific boss (e.g., ID 18728) :
-GlobalScaling.CustomCreatures = "18728 83 35.0 10.0 2.5 2.5 1.0 1.0 5.0 2.5 2.5,17711 83 20.0 10.0 2.6 2.6 1.0 1.0 5.0 2.6 2.6,6109 83 22.0 10.0 2.2 2.2 1.0 1.0 5.0 2.2 2.2,18338 83 22.0 10.0 2.2 2.2 1.0 1.0 5.0 2.2 2.2,14887 83 18.0 10.0 2.4 2.4 1.0 1.0 5.0 2.4 2.4,14888 83 18.0 10.0 2.4 2.4 1.0 1.0 5.0 2.4 2.4,14889 83 18.0 10.0 2.4 2.4 1.0 1.0 5.0 2.4 2.4,14890 83 18.0 10.0 2.4 2.4 1.0 1.0 5.0 2.4 2.4,18728 83 35.0 10.0 2.5 2.5 1.0 1.0 5.0 1.5 1.5,17711 83 20.0 10.0 2.6 2.6 1.0 1.0 5.0 1.5 1.5,6109 83 22.0 10.0 2.2 2.2 1.0 1.0 5.0 1.5 1.5,18338 83 22.0 10.0 2.2 2.2 1.0 1.0 5.0 1.5 1.5,14887 83 18.0 10.0 2.4 2.4 1.0 1.0 5.0 1.5 1.5,14888 83 18.0 10.0 2.4 2.4 1.0 1.0 5.0 1.5 1.5,14889 83 18.0 10.0 2.4 2.4 1.0 1.0 5.0 1.5 1.5,14890 83 18.0 10.0 2.4 2.4 1.0 1.0 5.0 1.5 1.5,13282 83 19.0 7.0 12.0 5.5 1.0 1.0 2.0 5.5 3.0,9017 83 17.0 7.0 10.5 4.5 1.0 1.0 2.0 4.5 2.6,9816 83 16.0 7.0 9.5 4.0 1.0 1.0 2.0 4.0 2.5,13280 83 16.0 7.0 10.0 4.0 1.0 1.0 2.0 4.0 2.5,12056 83 85.0 5.5 7.5 2.5 1.0 1.0 2.5 2.5 1.8,15299 83 55.0 5.5 6.5 2.0 1.0 1.0 2.5 2.0 1.5,18341 83 12.0 7.0 2.8 3.0 1.0 1.0 2.0 3.0 2.0,20604 83 9.0 7.0 2.6 3.0 1.0 1.0 2.0 3.0 2.0,21216 83 16.0 1.5 2.2 2.0 1.0 1.0 2.5 2.0 1.5"
+GlobalScaling.CustomCreatures = "18728 83 35.0 10.0 2.5 2.5 1.0 1.0 5.0 2.5 2.5,17711 83 20.0 10.0 2.6 2.6 1.0 1.0 5.0 2.6 2.6,6109 83 22.0 10.0 2.2 2.2 1.0 1.0 5.0 2.2 2.2,18338 83 22.0 10.0 2.2 2.2 1.0 1.0 5.0 2.2 2.2,14887 83 18.0 10.0 2.4 2.4 1.0 1.0 5.0 2.4 2.4,14888 83 18.0 10.0 2.4 2.4 1.0 1.0 5.0 2.4 2.4,14889 83 18.0 10.0 2.4 2.4 1.0 1.0 5.0 2.4 2.4,14890 83 18.0 10.0 2.4 2.4 1.0 1.0 5.0 2.4 2.4,18728 83 35.0 10.0 2.5 2.5 1.0 1.0 5.0 1.5 1.5,17711 83 20.0 10.0 2.6 2.6 1.0 1.0 5.0 1.5 1.5,6109 83 22.0 10.0 2.2 2.2 1.0 1.0 5.0 1.5 1.5,18338 83 22.0 10.0 2.2 2.2 1.0 1.0 5.0 1.5 1.5,14887 83 18.0 10.0 2.4 2.4 1.0 1.0 5.0 1.5 1.5,14888 83 18.0 10.0 2.4 2.4 1.0 1.0 5.0 1.5 1.5,14889 83 18.0 10.0 2.4 2.4 1.0 1.0 5.0 1.5 1.5,14890 83 18.0 10.0 2.4 2.4 1.0 1.0 5.0 1.5 1.5,13282 83 22.0 7.0 10.0 10.5 1.0 1.0 2.0 10.5 20.0,9017 83 17.0 7.0 10.5 4.5 1.0 1.0 2.0 4.5 2.6,9816 83 16.0 7.0 9.5 4.0 1.0 1.0 2.0 4.0 2.5,13280 83 16.0 7.0 10.0 4.0 1.0 1.0 2.0 4.0 2.5,12056 83 85.0 5.5 7.5 2.5 1.0 1.0 2.5 2.5 1.8,15299 83 55.0 5.5 6.5 2.0 1.0 1.0 2.5 2.0 1.5,18341 83 12.0 7.0 2.8 3.0 1.0 1.0 2.0 3.0 2.0,20604 83 9.0 7.0 2.6 3.0 1.0 1.0 2.0 3.0 2.0,21216 83 16.0 1.5 2.2 2.0 1.0 1.0 2.5 2.0 1.5"
 
 # 2. GlobalScaling.CustomHealingSpells
 # Description: Allows applying an exception multiplier to a specific direct 
@@ -242,7 +242,7 @@ GlobalScaling.SizeOverride.Maps.Enable = 1
 # Format: "MapID TrashScale BossScale,MapID2 TrashScale2 BossScale2"
 # Example: In Ragefire Chasm (389), trash scale is normal (1.0) but bosses are doubled (2.0) :
 # GlobalScaling.SizeOverride.Maps = "389 1.0 2.0"
-GlobalScaling.SizeOverride.Maps = "389 1.5 2.5, 36 1 2"
+GlobalScaling.SizeOverride.Maps = "389 1.5 2, 36 1.5 2, 349 1.5 2"
 
 # 3. GlobalScaling.SizeOverride.Creatures
 # Description: Multiplies the visual size of a specific creature or boss (EntryID).
@@ -919,15 +919,15 @@ GlobalScaling.Instance.349.0.Rank.Commander.Gold = 1.5
 GlobalScaling.Instance.349.0.Rank.Commander.Heal = 5
 GlobalScaling.Instance.349.0.Rank.Commander.DoT = 5
 GlobalScaling.Instance.349.0.Rank.BossNonSkull.LevelBonus = 3
-GlobalScaling.Instance.349.0.Rank.BossNonSkull.HP = 19.0
+GlobalScaling.Instance.349.0.Rank.BossNonSkull.HP = 24.0
 GlobalScaling.Instance.349.0.Rank.BossNonSkull.Mana = 7.0
-GlobalScaling.Instance.349.0.Rank.BossNonSkull.Damage = 10.0
-GlobalScaling.Instance.349.0.Rank.BossNonSkull.Spell = 2.5
+GlobalScaling.Instance.349.0.Rank.BossNonSkull.Damage = 40.0
+GlobalScaling.Instance.349.0.Rank.BossNonSkull.Spell = 25
 GlobalScaling.Instance.349.0.Rank.BossNonSkull.Armor = 1.0
 GlobalScaling.Instance.349.0.Rank.BossNonSkull.Resistance = 1.0
 GlobalScaling.Instance.349.0.Rank.BossNonSkull.Gold = 2.0
-GlobalScaling.Instance.349.0.Rank.BossNonSkull.Heal = 2.5
-GlobalScaling.Instance.349.0.Rank.BossNonSkull.DoT = 2.5
+GlobalScaling.Instance.349.0.Rank.BossNonSkull.Heal = 10
+GlobalScaling.Instance.349.0.Rank.BossNonSkull.DoT = 10
 GlobalScaling.Instance.349.0.Rank.BossSkull.LevelBonus = 3
 GlobalScaling.Instance.349.0.Rank.BossSkull.HP = 21.0
 GlobalScaling.Instance.349.0.Rank.BossSkull.Mana = 8.0
