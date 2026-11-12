@@ -2838,7 +2838,6 @@ GlobalScaling.Instance.269.1.Rank.Trigger.HP = 1.0
 GlobalScaling.Instance.269.1.Rank.Trigger.Mana = 1.0
 GlobalScaling.Instance.269.1.Rank.Trigger.Damage = 1.0
 GlobalScaling.Instance.269.1.Rank.Trigger.Spell = 1.0
-GlobalScaling.Instance.560.1.Rank.Trigger.Armor = 1.0
 GlobalScaling.Instance.269.1.Rank.Trigger.Armor = 1.0
 GlobalScaling.Instance.269.1.Rank.Trigger.Resistance = 1.0
 GlobalScaling.Instance.269.1.Rank.Trigger.Gold = 0.0
