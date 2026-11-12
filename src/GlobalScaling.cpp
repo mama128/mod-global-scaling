@@ -1610,7 +1610,6 @@ void Global_Scaling_UnitScript::ModifySpellDamageTaken(Unit* target, Unit* attac
     }
 
     bool isWeaponBasedSpell = false;
-    bool hasRealPointsPerLevel = false;
     int32 nativeSpellDmg = 0;
 
     if (spellInfo)
@@ -1622,6 +1621,13 @@ void Global_Scaling_UnitScript::ModifySpellDamageTaken(Unit* target, Unit* attac
 
             if (nativeLevel < 70 && spellInfo->SpellLevel >= 71)
                 return;
+        }
+
+        // Ranged/melee abilities requiring a weapon (e.g. Shoot, Throw, Concussive Shot, Wing Clip)
+        // already use the creature's scaled weapon damage inside Spell::EffectSchoolDMG
+        if (spellInfo->DmgClass == SPELL_DAMAGE_CLASS_RANGED && spellInfo->EquippedItemClass == 2) // ITEM_CLASS_WEAPON = 2
+        {
+            isWeaponBasedSpell = true;
         }
 
         for (uint8 i = 0; i < MAX_SPELL_EFFECTS; ++i)
@@ -1654,7 +1660,6 @@ void Global_Scaling_UnitScript::ModifySpellDamageTaken(Unit* target, Unit* attac
 
                 if (spellInfo->Effects[i].RealPointsPerLevel > 0.0f)
                 {
-                    hasRealPointsPerLevel = true;
                     int32 calcLvl = static_cast<int32>(nativeLevel);
                     if (spellInfo->MaxLevel > 0 && calcLvl > static_cast<int32>(spellInfo->MaxLevel))
                         calcLvl = static_cast<int32>(spellInfo->MaxLevel);
@@ -1678,7 +1683,9 @@ void Global_Scaling_UnitScript::ModifySpellDamageTaken(Unit* target, Unit* attac
 
     if ((!isWeaponBasedSpell || hasCustomOverride) && totalSpellMult != 1.0f)
     {
-        if (!hasCustomOverride && hasRealPointsPerLevel && nativeSpellDmg > 0 && damage > nativeSpellDmg * 2)
+        // Prevents double-dipping on hybrid/knockback/debuff spells where AzerothCore already injected
+        // scaled weapon damage or level 83 RealPointsPerLevel into `damage` before ModifySpellDamageTaken
+        if (!hasCustomOverride && nativeSpellDmg > 5 && damage > nativeSpellDmg * 2)
             damage = static_cast<int32>(nativeSpellDmg * totalSpellMult);
         else
             damage = static_cast<int32>(damage * totalSpellMult);
