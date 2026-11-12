@@ -150,6 +150,7 @@ namespace GlobalScaleConfig
         uint32 OriginalStats[2]; 
         float OriginalScale; 
         float ScaledMinDmg;
+        float IntrinsicDmgScale;
         float IntrinsicSpellScale;
         float IntrinsicDoTScale;
         float IntrinsicHealScale;
@@ -360,7 +361,7 @@ namespace GlobalScaleConfig
             {543, 0}, {543, 1}, {542, 0}, {542, 1}, {540, 0}, {540, 1}, {547, 0}, {547, 1}, {546, 0}, {546, 1}, {545, 0}, {545, 1}, {557, 0}, {557, 1}, {558, 0}, {558, 1}, {556, 0}, {556, 1}, {555, 0}, {555, 1}, {554, 0}, {554, 1}, {553, 0}, {553, 1}, {552, 0}, {552, 1}, {560, 0}, {560, 1}, {269, 0}, {269, 1}, {585, 0}, {585, 1},
             {532, 0}, {568, 0}, {565, 1}, {544, 1}, {548, 1}, {550, 1}, {534, 1}, {564, 1}, {580, 1},
             {574, 0}, {574, 1}, {576, 0}, {576, 1}, {601, 0}, {601, 1}, {619, 0}, {619, 1}, {608, 0}, {608, 1}, {600, 0}, {600, 1}, {604, 0}, {604, 1}, {599, 0}, {599, 1}, {602, 0}, {602, 1}, {575, 0}, {575, 1}, {578, 0}, {578, 1}, {595, 0}, {595, 1}, {650, 0}, {650, 1}, {632, 0}, {632, 1}, {658, 0}, {658, 1}, {668, 0}, {668, 1},
-            {533, 0}, {533, 1}, {590, 0}, {590, 1}, {615, 0}, {615, 1}, {616, 0}, {616, 1}, {624, 0}, {624, 1}, {603, 0}, {603, 1}, {249, 0}, {249, 1},
+            {533, 0}, {533, 1}, {615, 0}, {615, 1}, {616, 0}, {616, 1}, {624, 0}, {624, 1}, {603, 0}, {603, 1}, {249, 0}, {249, 1},
             {649, 0}, {649, 1}, {649, 2}, {649, 3}, {631, 0}, {631, 1}, {631, 2}, {631, 3}, {724, 0}, {724, 1}, {724, 2}, {724, 3}
         };
 
@@ -728,6 +729,7 @@ namespace GlobalScaleConfig
 
                 baseStats.OriginalScale = creature->GetFloatValue(OBJECT_FIELD_SCALE_X);
 
+                baseStats.IntrinsicDmgScale = 1.0f;
                 baseStats.IntrinsicSpellScale = 1.0f;
                 baseStats.IntrinsicDoTScale = 1.0f;
                 baseStats.IntrinsicHealScale = 1.0f;
@@ -834,13 +836,15 @@ namespace GlobalScaleConfig
         float intrinsicDoTScale   = std::pow(spellLevelRatio, ctx.Exponents.DoT) * catchUpMod;
         float intrinsicHealScale  = std::pow(spellLevelRatio, ctx.Exponents.Heal) * catchUpMod;
 
-        if (!alreadyScaled || baseStats.IntrinsicSpellScale != intrinsicSpellScale)
+        if (!alreadyScaled || baseStats.IntrinsicSpellScale != intrinsicSpellScale || baseStats.IntrinsicDmgScale != intrinsicDmgScale)
         {
             std::unique_lock<std::shared_mutex> lock(CacheMutex);
+            creatureBaseStatsCache[creatureGuid].IntrinsicDmgScale = intrinsicDmgScale;
             creatureBaseStatsCache[creatureGuid].IntrinsicSpellScale = intrinsicSpellScale;
             creatureBaseStatsCache[creatureGuid].IntrinsicDoTScale = intrinsicDoTScale;
             creatureBaseStatsCache[creatureGuid].IntrinsicHealScale = intrinsicHealScale;
             
+            baseStats.IntrinsicDmgScale = intrinsicDmgScale;
             baseStats.IntrinsicSpellScale = intrinsicSpellScale;
             baseStats.IntrinsicDoTScale = intrinsicDoTScale;
             baseStats.IntrinsicHealScale = intrinsicHealScale;
@@ -1193,6 +1197,7 @@ void Global_Scaling_CreatureScript::OnCreatureAddWorld(Creature* creature)
 
                 baseStats.OriginalScale = creature->GetFloatValue(OBJECT_FIELD_SCALE_X);
 
+                baseStats.IntrinsicDmgScale = 1.0f;
                 baseStats.IntrinsicSpellScale = 1.0f;
                 baseStats.IntrinsicDoTScale = 1.0f;
                 baseStats.IntrinsicHealScale = 1.0f;
@@ -1667,7 +1672,7 @@ void Global_Scaling_UnitScript::ModifySpellDamageTaken(Unit* target, Unit* attac
     }
 
     GlobalScaleConfig::CreatureScaleContext ctx = GlobalScaleConfig::GetCreatureScaleContext(creature, creature->GetCreatureTemplate());
-    float dynamicScale = isWeaponBasedSpell ? 1.0f : (intrinsicSpellScale > 1.0f ? intrinsicSpellScale : ctx.Mults.Damage);
+    float dynamicScale = isWeaponBasedSpell ? 1.0f : std::max(1.0f, intrinsicSpellScale);
     float rankMult = ctx.Mults.Spell;
     float totalSpellMult = hasCustomOverride ? customSpellMult : (dynamicScale * rankMult);
 
@@ -1799,7 +1804,7 @@ void Global_Scaling_UnitScript::ModifyPeriodicDamageAurasTick(Unit* target, Unit
     }
 
     GlobalScaleConfig::CreatureScaleContext ctx = GlobalScaleConfig::GetCreatureScaleContext(creature, creature->GetCreatureTemplate());
-    float dynamicScale = isWeaponBasedSpell ? 1.0f : (intrinsicDoTScale > 1.0f ? intrinsicDoTScale : ctx.Mults.Damage);
+    float dynamicScale = isWeaponBasedSpell ? 1.0f : std::max(1.0f, intrinsicDoTScale);
     float rankMult = ctx.Mults.DoT;
     float totalSpellMult = hasCustomOverride ? customSpellMult : (dynamicScale * rankMult);
 
@@ -1865,8 +1870,7 @@ void Global_Scaling_UnitScript::ModifyHealReceived(Unit* target, Unit* healer, u
 
     GlobalScaleConfig::CreatureScaleContext ctx = GlobalScaleConfig::GetCreatureScaleContext(creature, creature->GetCreatureTemplate());
     
-    float dynamicScale = intrinsicHealScale > 1.0f ? intrinsicHealScale : ctx.Mults.Damage;
-
+    float dynamicScale = std::max(1.0f, intrinsicHealScale);
     float totalHealMult = dynamicScale * ctx.Mults.Heal;
 
     if (spellInfo)
