@@ -1107,7 +1107,7 @@ GlobalScaling.Instance.229.0.Rank.Trigger.DoT = 1.0
 
 # --- Map 429: Dire Maul (Normal - Diff 0) ---
 GlobalScaling.Instance.429.0.Rank.Trash.LevelBonus = 0
-GlobalScaling.Instance.429.0.Rank.Trash.HP = 10.0
+GlobalScaling.Instance.429.0.Rank.Trash.HP = 8.0
 GlobalScaling.Instance.429.0.Rank.Trash.Mana = 3.0
 GlobalScaling.Instance.429.0.Rank.Trash.Damage = 9.0
 GlobalScaling.Instance.429.0.Rank.Trash.Spell = 6
@@ -1117,7 +1117,7 @@ GlobalScaling.Instance.429.0.Rank.Trash.Gold = 1.5
 GlobalScaling.Instance.429.0.Rank.Trash.Heal = 6
 GlobalScaling.Instance.429.0.Rank.Trash.DoT = 6
 GlobalScaling.Instance.429.0.Rank.Commander.LevelBonus = 1
-GlobalScaling.Instance.429.0.Rank.Commander.HP = 10.0
+GlobalScaling.Instance.429.0.Rank.Commander.HP = 5.0
 GlobalScaling.Instance.429.0.Rank.Commander.Mana = 5.5
 GlobalScaling.Instance.429.0.Rank.Commander.Damage = 11.0
 GlobalScaling.Instance.429.0.Rank.Commander.Spell = 6
@@ -1127,7 +1127,7 @@ GlobalScaling.Instance.429.0.Rank.Commander.Gold = 1.5
 GlobalScaling.Instance.429.0.Rank.Commander.Heal = 6
 GlobalScaling.Instance.429.0.Rank.Commander.DoT = 6
 GlobalScaling.Instance.429.0.Rank.BossNonSkull.LevelBonus = 3
-GlobalScaling.Instance.429.0.Rank.BossNonSkull.HP = 16.0
+GlobalScaling.Instance.429.0.Rank.BossNonSkull.HP = 21.0
 GlobalScaling.Instance.429.0.Rank.BossNonSkull.Mana = 7.0
 GlobalScaling.Instance.429.0.Rank.BossNonSkull.Damage = 10.0
 GlobalScaling.Instance.429.0.Rank.BossNonSkull.Spell = 2.5
