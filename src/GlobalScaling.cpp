@@ -1826,13 +1826,41 @@ void Global_Scaling_UnitScript::ModifyPeriodicDamageAurasTick(Unit* target, Unit
 
 void Global_Scaling_UnitScript::ModifyHealReceived(Unit* target, Unit* healer, uint32& addhealth, SpellInfo const* spellInfo)
 {
-    if (!healer || !target) return;
+    if (!healer || !target || addhealth == 0) return;
+
+    // 1. Prevent a player, playerbot, or pet from healing a hostile creature (e.g., bot targeting bug or proc)
+    if (GlobalScaleConfig::IsPlayerOwnedOrControlled(healer) && !GlobalScaleConfig::IsPlayerOwnedOrControlled(target))
+    {
+        if (healer->IsHostileTo(target) || !healer->IsFriendlyTo(target))
+        {
+            addhealth = 0;
+            return;
+        }
+        return;
+    }
+
+    // 2. Block Judgement of Light (20267), Seal of Light (20167), and Vampiric Embrace (15290)
+    // on non-player targets (since aura 20185 is on the boss, making the boss the healer during CastCustomSpell)
+    if (spellInfo && (spellInfo->Id == 20267 || spellInfo->Id == 20167 || spellInfo->Id == 15290))
+    {
+        if (!GlobalScaleConfig::IsPlayerOwnedOrControlled(target))
+        {
+            addhealth = 0;
+        }
+        return;
+    }
+
+    // 3. Never scale healing received by a player, playerbot, or pet
+    if (GlobalScaleConfig::IsPlayerOwnedOrControlled(target))
+        return;
 
     if (spellInfo)
     {
+        // Exclude percentage heals, Lay on Hands (HEAL_MAX_HEALTH), and health leech/drain life effects
         for (uint8 i = 0; i < MAX_SPELL_EFFECTS; ++i)
         {
             if (spellInfo->Effects[i].Effect == SPELL_EFFECT_HEAL_PCT ||
+                spellInfo->Effects[i].Effect == SPELL_EFFECT_HEAL_MAX_HEALTH ||
                 spellInfo->Effects[i].Effect == SPELL_EFFECT_HEALTH_LEECH ||
                 spellInfo->Effects[i].ApplyAuraName == SPELL_AURA_PERIODIC_LEECH)
             {
@@ -1849,6 +1877,13 @@ void Global_Scaling_UnitScript::ModifyHealReceived(Unit* target, Unit* healer, u
     }
     
     if (!creature || creature->IsCritter()) return;
+
+    // Block healing if the NPC healer is hostile to the target
+    if (creature->IsHostileTo(target))
+    {
+        addhealth = 0;
+        return;
+    }
 
     GlobalScaleConfig::EnsureConfigLoaded();
 
@@ -1877,7 +1912,8 @@ void Global_Scaling_UnitScript::ModifyHealReceived(Unit* target, Unit* healer, u
 
     GlobalScaleConfig::CreatureScaleContext ctx = GlobalScaleConfig::GetCreatureScaleContext(creature, creature->GetCreatureTemplate());
     
-    float dynamicScale = std::max(1.0f, intrinsicHealScale);
+    float dynamicScale = intrinsicHealScale > 1.0f ? intrinsicHealScale : ctx.Mults.Damage;
+
     float totalHealMult = dynamicScale * ctx.Mults.Heal;
 
     if (spellInfo)
