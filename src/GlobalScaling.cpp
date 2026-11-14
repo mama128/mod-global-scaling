@@ -23,6 +23,7 @@
 #include "Chat.h"
 #include "SpellInfo.h"
 #include "DBCStores.h"
+#include "Random.h"
 #include "Log.h"
 
 using namespace Acore::ChatCommands;
@@ -150,6 +151,7 @@ namespace GlobalScaleConfig
         uint32 OriginalStats[2]; 
         float OriginalScale; 
         float ScaledMinDmg;
+        float ScaledMaxDmg;
         float IntrinsicDmgScale;
         float IntrinsicSpellScale;
         float IntrinsicDoTScale;
@@ -484,10 +486,6 @@ namespace GlobalScaleConfig
         return false;
     }
 
-    // Safely captures baseline stats at spawn.
-    // If an NPC summon was spawned at its master's scaled level (e.g. level 81 instead of 20),
-    // we reset it to its true native level via creature->SelectLevel() first so we capture
-    // its authentic unscaled database stats (e.g. 432 HP at level 20 instead of 6739 HP at level 81).
     void CaptureInitialBaseStats(Creature* creature, CreatureTemplate const* cInfo, CachedBaseStats& baseStats)
     {
         baseStats.Entry = cInfo->Entry;
@@ -519,6 +517,7 @@ namespace GlobalScaleConfig
         baseStats.OriginalMaxMana = creature->GetMaxPower(POWER_MANA);
 
         baseStats.ScaledMinDmg = baseStats.MinDmg;
+        baseStats.ScaledMaxDmg = baseStats.MaxDmg;
         baseStats.OriginalArmor = creature->GetArmor();
 
         for (int i = 0; i < 6; ++i)
@@ -782,8 +781,6 @@ namespace GlobalScaleConfig
         bool isSummon = creature->IsSummon() || creature->IsPet() || creature->IsGuardian();
         bool isTrigger = creature->IsTrigger() || ((cInfo->flags_extra & 0x00000080) != 0);
 
-        // Because CaptureInitialBaseStats resets any over-leveled summon back to its true database level
-        // via creature->SelectLevel(), all creatures (including summons) scale cleanly from their true NativeLevel.
         float hpNativeLevel = static_cast<float>(baseStats.NativeLevel);
         float dmgNativeLevel = static_cast<float>(baseStats.NativeLevel);
         float spellNativeLevel = static_cast<float>(baseStats.NativeLevel);
@@ -952,6 +949,7 @@ namespace GlobalScaleConfig
             {
                 std::unique_lock<std::shared_mutex> lock(CacheMutex);
                 creatureBaseStatsCache[creatureGuid].ScaledMinDmg = minDmg;
+                creatureBaseStatsCache[creatureGuid].ScaledMaxDmg = maxDmg;
             }
 
             float dmgMod         = std::max(0.01f, cInfo->DamageModifier);
@@ -1537,6 +1535,8 @@ void Global_Scaling_UnitScript::ModifySpellDamageTaken(Unit* target, Unit* attac
 
     float intrinsicDmgScale = 1.0f;
     float intrinsicSpellScale = 1.0f;
+    float scaledMinDmg = 0.0f;
+    float scaledMaxDmg = 0.0f;
     uint32 nativeLevel = 1;
     {
         std::shared_lock<std::shared_mutex> lock(GlobalScaleConfig::CacheMutex);
@@ -1545,6 +1545,8 @@ void Global_Scaling_UnitScript::ModifySpellDamageTaken(Unit* target, Unit* attac
         {
             intrinsicDmgScale = itCache->second.IntrinsicDmgScale;
             intrinsicSpellScale = itCache->second.IntrinsicSpellScale;
+            scaledMinDmg = itCache->second.ScaledMinDmg;
+            scaledMaxDmg = itCache->second.ScaledMaxDmg;
             nativeLevel = itCache->second.NativeLevel;
         }
     }
@@ -1580,6 +1582,7 @@ void Global_Scaling_UnitScript::ModifySpellDamageTaken(Unit* target, Unit* attac
     }
 
     bool isWeaponBasedSpell = false;
+    int32 weaponDmgPct = 100;
     int32 nativeSpellDmg = 0;
 
     if (spellInfo)
@@ -1593,9 +1596,6 @@ void Global_Scaling_UnitScript::ModifySpellDamageTaken(Unit* target, Unit* attac
                 return;
         }
 
-        // In AzerothCore (Spell::EffectSchoolDMG), ANY spell with DmgClass == SPELL_DAMAGE_CLASS_RANGED (3)
-        // or SPELL_DAMAGE_CLASS_MELEE (2) (even with EquippedItemClass == -1 like Poisoned Harpoon 5208)
-        // ALREADY adds the creature's scaled weapon damage (BASE_ATTACK or RANGED_ATTACK) to `damage`.
         if (spellInfo->DmgClass == SPELL_DAMAGE_CLASS_RANGED || spellInfo->DmgClass == SPELL_DAMAGE_CLASS_MELEE)
         {
             isWeaponBasedSpell = true;
@@ -1614,15 +1614,23 @@ void Global_Scaling_UnitScript::ModifySpellDamageTaken(Unit* target, Unit* attac
 
             if (spellInfo->Effects[i].Effect == SPELL_EFFECT_WEAPON_DAMAGE ||
                 spellInfo->Effects[i].Effect == SPELL_EFFECT_WEAPON_DAMAGE_NOSCHOOL ||
-                spellInfo->Effects[i].Effect == SPELL_EFFECT_NORMALIZED_WEAPON_DMG ||
-                spellInfo->Effects[i].Effect == SPELL_EFFECT_WEAPON_PERCENT_DAMAGE)
+                spellInfo->Effects[i].Effect == SPELL_EFFECT_NORMALIZED_WEAPON_DMG)
             {
                 isWeaponBasedSpell = true;
+                int32 bonus = spellInfo->Effects[i].BasePoints + 1;
+                if (bonus > 0)
+                    nativeSpellDmg += bonus;
             }
-
-            if (spellInfo->Effects[i].Effect == SPELL_EFFECT_SCHOOL_DAMAGE ||
-                spellInfo->Effects[i].Effect == SPELL_EFFECT_ENVIRONMENTAL_DAMAGE ||
-                spellInfo->Effects[i].Effect == SPELL_EFFECT_HEALTH_LEECH)
+            else if (spellInfo->Effects[i].Effect == SPELL_EFFECT_WEAPON_PERCENT_DAMAGE)
+            {
+                isWeaponBasedSpell = true;
+                int32 pct = spellInfo->Effects[i].BasePoints + 1;
+                if (pct > 0)
+                    weaponDmgPct = pct;
+            }
+            else if (spellInfo->Effects[i].Effect == SPELL_EFFECT_SCHOOL_DAMAGE ||
+                     spellInfo->Effects[i].Effect == SPELL_EFFECT_ENVIRONMENTAL_DAMAGE ||
+                     spellInfo->Effects[i].Effect == SPELL_EFFECT_HEALTH_LEECH)
             {
                 int32 bp = spellInfo->Effects[i].BasePoints + 1;
                 int32 maxBp = spellInfo->Effects[i].BasePoints + static_cast<int32>(spellInfo->Effects[i].DieSides);
@@ -1648,26 +1656,34 @@ void Global_Scaling_UnitScript::ModifySpellDamageTaken(Unit* target, Unit* attac
 
     GlobalScaleConfig::CreatureScaleContext ctx = GlobalScaleConfig::GetCreatureScaleContext(creature, creature->GetCreatureTemplate());
 
-    if (isWeaponBasedSpell && !hasCustomOverride)
+    if (!hasCustomOverride && isWeaponBasedSpell)
     {
-        // If it is a melee/ranged DmgClass spell that ONLY has flat BasePoints (no weapon damage added by core),
-        // then `damage` will be close to `nativeSpellDmg`: scale it normally.
-        // Otherwise (like Poisoned Harpoon 5208 where `damage` already contains ~3500 scaled weapon damage + 30 flat),
-        // leave `damage` as-is so it never double-dips.
-        if (nativeSpellDmg > 0 && damage <= nativeSpellDmg * 2)
+        float weaponSpellMult = std::max(1.0f, intrinsicDmgScale) * ctx.Mults.Damage;
+
+        if (nativeSpellDmg > 0 && damage <= nativeSpellDmg * 2 && (scaledMinDmg <= 0.0f || damage < static_cast<int32>(scaledMinDmg * 0.5f)))
         {
-            float weaponSpellMult = std::max(1.0f, intrinsicDmgScale) * ctx.Mults.Damage;
             damage = static_cast<int32>(damage * weaponSpellMult);
+            return;
+        }
+
+        if (scaledMinDmg > 50.0f)
+        {
+            float effMax = std::max(scaledMinDmg + 1.0f, scaledMaxDmg);
+            float rolledWeaponDmg = frand(scaledMinDmg, effMax) * (static_cast<float>(weaponDmgPct) / 100.0f);
+            float bonusDmg = static_cast<float>(nativeSpellDmg) * weaponSpellMult;
+            int32 expectedMaxAllowed = static_cast<int32>((effMax * (static_cast<float>(weaponDmgPct) / 100.0f) + bonusDmg) * 1.35f);
+
+            if (damage > expectedMaxAllowed)
+            {
+                damage = static_cast<int32>(rolledWeaponDmg + bonusDmg);
+            }
         }
         return;
     }
 
-    bool isPoisonOrPhysical = spellInfo &&
-        (spellInfo->Dispel == DISPEL_POISON || (spellInfo->SchoolMask & SPELL_SCHOOL_MASK_NORMAL) != 0);
-
-    float baseIntrinsic = isPoisonOrPhysical ? std::max(intrinsicSpellScale, intrinsicDmgScale) : intrinsicSpellScale;
-    float dynamicScale = std::max(1.0f, baseIntrinsic);
-    float rankMult = isPoisonOrPhysical ? std::max(ctx.Mults.Spell, ctx.Mults.Damage) : ctx.Mults.Spell;
+    // Direct non-weapon spells scale strictly with Spell multipliers (never inheriting melee Damage)
+    float dynamicScale = std::max(1.0f, intrinsicSpellScale);
+    float rankMult = ctx.Mults.Spell;
     float totalSpellMult = hasCustomOverride ? customSpellMult : (dynamicScale * rankMult);
 
     if (totalSpellMult != 1.0f)
@@ -1715,7 +1731,6 @@ void Global_Scaling_UnitScript::ModifyPeriodicDamageAurasTick(Unit* target, Unit
 
     if (!GlobalScaleConfig::Enable || GlobalScaleConfig::IsPlayerOwnedOrControlled(creature)) return;
 
-    float intrinsicDmgScale = 1.0f;
     float intrinsicDoTScale = 1.0f;
     uint32 nativeLevel = 1;
     {
@@ -1723,7 +1738,6 @@ void Global_Scaling_UnitScript::ModifyPeriodicDamageAurasTick(Unit* target, Unit
         auto itCache = GlobalScaleConfig::creatureBaseStatsCache.find(guid);
         if (itCache != GlobalScaleConfig::creatureBaseStatsCache.end())
         {
-            intrinsicDmgScale = itCache->second.IntrinsicDmgScale;
             intrinsicDoTScale = itCache->second.IntrinsicDoTScale;
             nativeLevel = itCache->second.NativeLevel;
         }
@@ -1799,13 +1813,11 @@ void Global_Scaling_UnitScript::ModifyPeriodicDamageAurasTick(Unit* target, Unit
     if (isWeaponBasedSpell && !hasCustomOverride)
         return;
 
-    bool isPoisonOrBleed = spellInfo &&
-        (spellInfo->Dispel == DISPEL_POISON || (spellInfo->SchoolMask & SPELL_SCHOOL_MASK_NORMAL) != 0);
-
+    // Periodic auras (DoTs, including Poison DoTs like Cookie's Acid Splash 6306)
+    // scale strictly with DoT multipliers so they never inherit melee Damage scaling.
     GlobalScaleConfig::CreatureScaleContext ctx = GlobalScaleConfig::GetCreatureScaleContext(creature, creature->GetCreatureTemplate());
-    float baseIntrinsic = isPoisonOrBleed ? std::max(intrinsicDoTScale, intrinsicDmgScale) : intrinsicDoTScale;
-    float dynamicScale = std::max(1.0f, baseIntrinsic);
-    float rankMult = isPoisonOrBleed ? std::max({ ctx.Mults.DoT, ctx.Mults.Damage, ctx.Mults.Spell }) : ctx.Mults.DoT;
+    float dynamicScale = std::max(1.0f, intrinsicDoTScale);
+    float rankMult = ctx.Mults.DoT;
     float totalSpellMult = hasCustomOverride ? customSpellMult : (dynamicScale * rankMult);
 
     if (totalSpellMult != 1.0f)
