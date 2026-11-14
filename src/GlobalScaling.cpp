@@ -1539,7 +1539,15 @@ void Global_Scaling_UnitScript::OnUnitEnterCombat(Unit* unit, Unit*)
 
 void Global_Scaling_UnitScript::ModifySpellDamageTaken(Unit* target, Unit* attacker, int32& damage, SpellInfo const* spellInfo)
 {
-    if (!attacker || !target || attacker == target || damage <= 0) return;
+    if (!attacker || !target || damage <= 0) return;
+
+    // Allow self-damage scaling ONLY when an enemy hits itself with an offensive spell
+    // (e.g. Warrior Spell Reflection or Grounding Totem reflecting a boss spell back onto the boss)
+    if (attacker == target)
+    {
+        if (!spellInfo || spellInfo->IsPositive())
+            return;
+    }
     
     Creature* creature = attacker->ToCreature();
     if (!creature)
@@ -1567,6 +1575,7 @@ void Global_Scaling_UnitScript::ModifySpellDamageTaken(Unit* target, Unit* attac
 
     if (!GlobalScaleConfig::Enable || GlobalScaleConfig::IsPlayerOwnedOrControlled(creature)) return;
 
+    float intrinsicDmgScale = 1.0f;
     float intrinsicSpellScale = 1.0f;
     uint32 nativeLevel = 1;
     {
@@ -1574,6 +1583,7 @@ void Global_Scaling_UnitScript::ModifySpellDamageTaken(Unit* target, Unit* attac
         auto itCache = GlobalScaleConfig::creatureBaseStatsCache.find(guid);
         if (itCache != GlobalScaleConfig::creatureBaseStatsCache.end())
         {
+            intrinsicDmgScale = itCache->second.IntrinsicDmgScale;
             intrinsicSpellScale = itCache->second.IntrinsicSpellScale;
             nativeLevel = itCache->second.NativeLevel;
         }
@@ -1676,15 +1686,17 @@ void Global_Scaling_UnitScript::ModifySpellDamageTaken(Unit* target, Unit* attac
         }
     }
 
+    bool isPoisonOrPhysical = !isWeaponBasedSpell && spellInfo &&
+        (spellInfo->Dispel == DISPEL_POISON || (spellInfo->SchoolMask & SPELL_SCHOOL_MASK_NORMAL) != 0);
+
     GlobalScaleConfig::CreatureScaleContext ctx = GlobalScaleConfig::GetCreatureScaleContext(creature, creature->GetCreatureTemplate());
-    float dynamicScale = isWeaponBasedSpell ? 1.0f : std::max(1.0f, intrinsicSpellScale);
-    float rankMult = ctx.Mults.Spell;
+    float baseIntrinsic = isPoisonOrPhysical ? std::max(intrinsicSpellScale, intrinsicDmgScale) : intrinsicSpellScale;
+    float dynamicScale = isWeaponBasedSpell ? 1.0f : std::max(1.0f, baseIntrinsic);
+    float rankMult = isPoisonOrPhysical ? std::max(ctx.Mults.Spell, ctx.Mults.Damage) : ctx.Mults.Spell;
     float totalSpellMult = hasCustomOverride ? customSpellMult : (dynamicScale * rankMult);
 
     if ((!isWeaponBasedSpell || hasCustomOverride) && totalSpellMult != 1.0f)
     {
-        // Prevents double-dipping on hybrid/knockback/debuff spells where AzerothCore already injected
-        // scaled weapon damage or level 83 RealPointsPerLevel into `damage` before ModifySpellDamageTaken
         if (!hasCustomOverride && nativeSpellDmg > 5 && damage > nativeSpellDmg * 2)
             damage = static_cast<int32>(nativeSpellDmg * totalSpellMult);
         else
@@ -1694,7 +1706,15 @@ void Global_Scaling_UnitScript::ModifySpellDamageTaken(Unit* target, Unit* attac
 
 void Global_Scaling_UnitScript::ModifyPeriodicDamageAurasTick(Unit* target, Unit* attacker, uint32& damage, SpellInfo const* spellInfo)
 {
-    if (!attacker || !target || attacker == target || damage <= 0) return;
+    if (!attacker || !target || damage <= 0) return;
+
+    // Allow reflected DoTs (e.g. Warrior Spell Reflection reflecting Immolate back onto Jergosh)
+    // to scale to the exact same damage the boss would have dealt to the player
+    if (attacker == target)
+    {
+        if (!spellInfo || spellInfo->IsPositive())
+            return;
+    }
     
     Creature* creature = attacker->ToCreature();
     if (!creature)
@@ -1722,6 +1742,7 @@ void Global_Scaling_UnitScript::ModifyPeriodicDamageAurasTick(Unit* target, Unit
 
     if (!GlobalScaleConfig::Enable || GlobalScaleConfig::IsPlayerOwnedOrControlled(creature)) return;
 
+    float intrinsicDmgScale = 1.0f;
     float intrinsicDoTScale = 1.0f;
     uint32 nativeLevel = 1;
     {
@@ -1729,6 +1750,7 @@ void Global_Scaling_UnitScript::ModifyPeriodicDamageAurasTick(Unit* target, Unit
         auto itCache = GlobalScaleConfig::creatureBaseStatsCache.find(guid);
         if (itCache != GlobalScaleConfig::creatureBaseStatsCache.end())
         {
+            intrinsicDmgScale = itCache->second.IntrinsicDmgScale;
             intrinsicDoTScale = itCache->second.IntrinsicDoTScale;
             nativeLevel = itCache->second.NativeLevel;
         }
@@ -1810,9 +1832,13 @@ void Global_Scaling_UnitScript::ModifyPeriodicDamageAurasTick(Unit* target, Unit
         }
     }
 
+    bool isPoisonOrBleed = !isWeaponBasedSpell && spellInfo &&
+        (spellInfo->Dispel == DISPEL_POISON || (spellInfo->SchoolMask & SPELL_SCHOOL_MASK_NORMAL) != 0);
+
     GlobalScaleConfig::CreatureScaleContext ctx = GlobalScaleConfig::GetCreatureScaleContext(creature, creature->GetCreatureTemplate());
-    float dynamicScale = isWeaponBasedSpell ? 1.0f : std::max(1.0f, intrinsicDoTScale);
-    float rankMult = ctx.Mults.DoT;
+    float baseIntrinsic = isPoisonOrBleed ? std::max(intrinsicDoTScale, intrinsicDmgScale) : intrinsicDoTScale;
+    float dynamicScale = isWeaponBasedSpell ? 1.0f : std::max(1.0f, baseIntrinsic);
+    float rankMult = isPoisonOrBleed ? std::max({ ctx.Mults.DoT, ctx.Mults.Damage, ctx.Mults.Spell }) : ctx.Mults.DoT;
     float totalSpellMult = hasCustomOverride ? customSpellMult : (dynamicScale * rankMult);
 
     if ((!isWeaponBasedSpell || hasCustomOverride) && totalSpellMult != 1.0f)
@@ -1828,30 +1854,42 @@ void Global_Scaling_UnitScript::ModifyHealReceived(Unit* target, Unit* healer, u
 {
     if (!healer || !target || addhealth == 0) return;
 
-    // 1. Prevent a player, playerbot, or pet from healing a hostile creature (e.g., bot targeting bug or proc)
-    if (GlobalScaleConfig::IsPlayerOwnedOrControlled(healer) && !GlobalScaleConfig::IsPlayerOwnedOrControlled(target))
+    // 1. Block any heal between hostile units (e.g. a Paladin's Judgement of Light 20267 proccing on a boss
+    // when the boss damages itself with a reflected spell, while still allowing heals on friendly NPCs like Akama/pets)
+    if (healer->IsHostileTo(target) || target->IsHostileTo(healer))
     {
-        if (healer->IsHostileTo(target) || !healer->IsFriendlyTo(target))
+        addhealth = 0;
+        return;
+    }
+
+    bool targetIsPlayerSide = GlobalScaleConfig::IsPlayerOwnedOrControlled(target);
+    bool healerIsPlayerSide = GlobalScaleConfig::IsPlayerOwnedOrControlled(healer);
+
+    // 2. If a player/bot/pet is the healer (or proc source), never scale the heal,
+    // and block it if the target is a hostile creature fighting players (even if faction flags are neutral)
+    if (healerIsPlayerSide)
+    {
+        if (!targetIsPlayerSide && !healer->IsFriendlyTo(target))
         {
             addhealth = 0;
-            return;
         }
         return;
     }
 
-    // 2. Block Judgement of Light (20267), Seal of Light (20167), and Vampiric Embrace (15290)
-    // on non-player targets (since aura 20185 is on the boss, making the boss the healer during CastCustomSpell)
+    // 3. Judgement of Light (20267), Seal of Light (20167), and Vampiric Embrace (15290):
+    // When triggered from a debuff on a boss, `healer` can be the boss itself.
+    // Block if `target` is the boss itself or an enemy of players; allow (unscaled) on players, pets, and friendly NPCs (Akama).
     if (spellInfo && (spellInfo->Id == 20267 || spellInfo->Id == 20167 || spellInfo->Id == 15290))
     {
-        if (!GlobalScaleConfig::IsPlayerOwnedOrControlled(target))
+        if (target == healer || (!targetIsPlayerSide && target->GetVictim() && GlobalScaleConfig::IsPlayerOwnedOrControlled(target->GetVictim())))
         {
             addhealth = 0;
         }
         return;
     }
 
-    // 3. Never scale healing received by a player, playerbot, or pet
-    if (GlobalScaleConfig::IsPlayerOwnedOrControlled(target))
+    // 4. Never scale healing received by a player, playerbot, or player pet
+    if (targetIsPlayerSide)
         return;
 
     if (spellInfo)
@@ -1877,13 +1915,6 @@ void Global_Scaling_UnitScript::ModifyHealReceived(Unit* target, Unit* healer, u
     }
     
     if (!creature || creature->IsCritter()) return;
-
-    // Block healing if the NPC healer is hostile to the target
-    if (creature->IsHostileTo(target))
-    {
-        addhealth = 0;
-        return;
-    }
 
     GlobalScaleConfig::EnsureConfigLoaded();
 
@@ -1912,8 +1943,7 @@ void Global_Scaling_UnitScript::ModifyHealReceived(Unit* target, Unit* healer, u
 
     GlobalScaleConfig::CreatureScaleContext ctx = GlobalScaleConfig::GetCreatureScaleContext(creature, creature->GetCreatureTemplate());
     
-    float dynamicScale = intrinsicHealScale > 1.0f ? intrinsicHealScale : ctx.Mults.Damage;
-
+    float dynamicScale = std::max(1.0f, intrinsicHealScale);
     float totalHealMult = dynamicScale * ctx.Mults.Heal;
 
     if (spellInfo)
