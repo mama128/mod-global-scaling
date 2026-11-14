@@ -361,7 +361,7 @@ namespace GlobalScaleConfig
             {543, 0}, {543, 1}, {542, 0}, {542, 1}, {540, 0}, {540, 1}, {547, 0}, {547, 1}, {546, 0}, {546, 1}, {545, 0}, {545, 1}, {557, 0}, {557, 1}, {558, 0}, {558, 1}, {556, 0}, {556, 1}, {555, 0}, {555, 1}, {554, 0}, {554, 1}, {553, 0}, {553, 1}, {552, 0}, {552, 1}, {560, 0}, {560, 1}, {269, 0}, {269, 1}, {585, 0}, {585, 1},
             {532, 0}, {568, 0}, {565, 1}, {544, 1}, {548, 1}, {550, 1}, {534, 1}, {564, 1}, {580, 1},
             {574, 0}, {574, 1}, {576, 0}, {576, 1}, {601, 0}, {601, 1}, {619, 0}, {619, 1}, {608, 0}, {608, 1}, {600, 0}, {600, 1}, {604, 0}, {604, 1}, {599, 0}, {599, 1}, {602, 0}, {602, 1}, {575, 0}, {575, 1}, {578, 0}, {578, 1}, {595, 0}, {595, 1}, {650, 0}, {650, 1}, {632, 0}, {632, 1}, {658, 0}, {658, 1}, {668, 0}, {668, 1},
-            {533, 0}, {533, 1}, {615, 0}, {615, 1}, {616, 0}, {616, 1}, {624, 0}, {624, 1}, {603, 0}, {603, 1}, {249, 0}, {249, 1},
+            {533, 0}, {533, 1}, {590, 0}, {590, 1}, {615, 0}, {615, 1}, {616, 0}, {616, 1}, {624, 0}, {624, 1}, {603, 0}, {603, 1}, {249, 0}, {249, 1},
             {649, 0}, {649, 1}, {649, 2}, {649, 3}, {631, 0}, {631, 1}, {631, 2}, {631, 3}, {724, 0}, {724, 1}, {724, 2}, {724, 3}
         };
 
@@ -482,6 +482,48 @@ namespace GlobalScaleConfig
         }
 
         return false;
+    }
+
+    // Safely captures baseline stats only when the creature is at its unscaled spawn state
+    void CaptureInitialBaseStats(Creature* creature, CreatureTemplate const* cInfo, CachedBaseStats& baseStats)
+    {
+        baseStats.Entry = cInfo->Entry;
+
+        uint32 tMinLvl = cInfo->minlevel > 0 ? cInfo->minlevel : 1;
+        uint32 tMaxLvl = cInfo->maxlevel >= tMinLvl ? cInfo->maxlevel : tMinLvl;
+        baseStats.NativeLevel = tMinLvl;
+
+        uint32 curLvl = creature->GetLevel();
+        baseStats.SpawnLevel = (curLvl > tMaxLvl && tMaxLvl < 80) ? tMaxLvl : curLvl;
+
+        baseStats.MinDmg = creature->GetFloatValue(UNIT_FIELD_MINDAMAGE);
+        baseStats.MaxDmg = creature->GetFloatValue(UNIT_FIELD_MAXDAMAGE);
+        baseStats.MinOffHandDmg = creature->GetFloatValue(UNIT_FIELD_MINOFFHANDDAMAGE);
+        baseStats.MaxOffHandDmg = creature->GetFloatValue(UNIT_FIELD_MAXOFFHANDDAMAGE);
+        baseStats.MinRangedDmg = creature->GetFloatValue(UNIT_FIELD_MINRANGEDDAMAGE);
+        baseStats.MaxRangedDmg = creature->GetFloatValue(UNIT_FIELD_MAXRANGEDDAMAGE);
+        baseStats.MeleeAP = creature->GetUInt32Value(UNIT_FIELD_ATTACK_POWER);
+        baseStats.RangedAP = creature->GetUInt32Value(UNIT_FIELD_RANGED_ATTACK_POWER);
+
+        baseStats.OriginalMaxHealth = creature->GetMaxHealth();
+        baseStats.ScaledMaxHealth = creature->GetMaxHealth();
+        baseStats.OriginalMaxMana = creature->GetMaxPower(POWER_MANA);
+
+        baseStats.ScaledMinDmg = baseStats.MinDmg;
+        baseStats.OriginalArmor = creature->GetArmor();
+
+        for (int i = 0; i < 6; ++i)
+            baseStats.OriginalResistances[i] = creature->GetUInt32Value(UNIT_FIELD_RESISTANCES + 1 + i);
+
+        baseStats.OriginalStats[0] = creature->GetUInt32Value(UNIT_FIELD_STAT0);
+        baseStats.OriginalStats[1] = creature->GetUInt32Value(UNIT_FIELD_STAT1);
+
+        baseStats.OriginalScale = creature->GetFloatValue(OBJECT_FIELD_SCALE_X);
+
+        baseStats.IntrinsicDmgScale = 1.0f;
+        baseStats.IntrinsicSpellScale = 1.0f;
+        baseStats.IntrinsicDoTScale = 1.0f;
+        baseStats.IntrinsicHealScale = 1.0f;
     }
 
     CreatureScaleContext GetCreatureScaleContext(Creature const* creature, CreatureTemplate const* cInfo)
@@ -690,50 +732,38 @@ namespace GlobalScaleConfig
             
             if (it != creatureBaseStatsCache.end() && it->second.Entry == cInfo->Entry)
             {
+                // Anti-Double-Dip Lock: If the creature was already cached, NEVER overwrite OriginalMaxHealth or MinDmg
+                // with its current (potentially already scaled) values.
                 alreadyScaled = (scaledCreatures.count(creatureGuid) > 0);
                 if (!alreadyScaled)
                     scaledCreatures.insert(creatureGuid);
 
                 baseStats = it->second;
             }
+            else if (it != creatureBaseStatsCache.end() && it->second.Entry != cInfo->Entry)
+            {
+                // Entry changed (e.g. phase transition / morph): only recapture if the creature is at its native level
+                uint32 tMaxLvl = cInfo->maxlevel >= cInfo->minlevel ? cInfo->maxlevel : cInfo->minlevel;
+                if (creature->GetLevel() <= tMaxLvl || tMaxLvl >= 80)
+                {
+                    CaptureInitialBaseStats(creature, cInfo, baseStats);
+                    creatureBaseStatsCache[creatureGuid] = baseStats;
+                }
+                else
+                {
+                    // Creature kept scaled stats across Entry change: preserve original unscaled baseline
+                    baseStats = it->second;
+                    baseStats.Entry = cInfo->Entry;
+                    baseStats.NativeLevel = cInfo->minlevel > 0 ? cInfo->minlevel : 1;
+                    creatureBaseStatsCache[creatureGuid] = baseStats;
+                }
+                alreadyScaled = false;
+                scaledCreatures.insert(creatureGuid);
+            }
             else
             {
                 alreadyScaled = false;
-                baseStats.Entry = cInfo->Entry;
-                
-                uint32 tMinLvl = cInfo->minlevel > 0 ? cInfo->minlevel : 1;
-                baseStats.NativeLevel = tMinLvl; 
-                baseStats.SpawnLevel = creature->GetLevel(); 
-                
-                baseStats.MinDmg = creature->GetFloatValue(UNIT_FIELD_MINDAMAGE);
-                baseStats.MaxDmg = creature->GetFloatValue(UNIT_FIELD_MAXDAMAGE);
-                baseStats.MinOffHandDmg = creature->GetFloatValue(UNIT_FIELD_MINOFFHANDDAMAGE);
-                baseStats.MaxOffHandDmg = creature->GetFloatValue(UNIT_FIELD_MAXOFFHANDDAMAGE);
-                baseStats.MinRangedDmg = creature->GetFloatValue(UNIT_FIELD_MINRANGEDDAMAGE);
-                baseStats.MaxRangedDmg = creature->GetFloatValue(UNIT_FIELD_MAXRANGEDDAMAGE);
-                baseStats.MeleeAP = creature->GetUInt32Value(UNIT_FIELD_ATTACK_POWER);
-                baseStats.RangedAP = creature->GetUInt32Value(UNIT_FIELD_RANGED_ATTACK_POWER);
-                
-                baseStats.OriginalMaxHealth = creature->GetMaxHealth();
-                baseStats.ScaledMaxHealth = creature->GetMaxHealth();
-                baseStats.OriginalMaxMana = creature->GetMaxPower(POWER_MANA);
-                
-                baseStats.ScaledMinDmg = baseStats.MinDmg;
-                baseStats.OriginalArmor = creature->GetArmor(); 
-
-                for (int i = 0; i < 6; ++i)
-                    baseStats.OriginalResistances[i] = creature->GetUInt32Value(UNIT_FIELD_RESISTANCES + 1 + i);
-
-                baseStats.OriginalStats[0] = creature->GetUInt32Value(UNIT_FIELD_STAT0);
-                baseStats.OriginalStats[1] = creature->GetUInt32Value(UNIT_FIELD_STAT1);
-
-                baseStats.OriginalScale = creature->GetFloatValue(OBJECT_FIELD_SCALE_X);
-
-                baseStats.IntrinsicDmgScale = 1.0f;
-                baseStats.IntrinsicSpellScale = 1.0f;
-                baseStats.IntrinsicDoTScale = 1.0f;
-                baseStats.IntrinsicHealScale = 1.0f;
-                
+                CaptureInitialBaseStats(creature, cInfo, baseStats);
                 creatureBaseStatsCache[creatureGuid] = baseStats;
                 scaledCreatures.insert(creatureGuid); 
             }
@@ -1053,7 +1083,6 @@ namespace GlobalScaleConfig
                     }
 
                     bool isScaled = false;
-                    bool entryChanged = false;
                     bool statsReverted = false;
                     
                     {
@@ -1064,28 +1093,20 @@ namespace GlobalScaleConfig
                         {
                             CachedBaseStats const& baseStats = creatureBaseStatsCache[guid];
                             
-                            if (baseStats.Entry != creature->GetCreatureTemplate()->Entry)
-                            {
-                                entryChanged = true;
-                            }
-                            else if ((creature->GetMaxHealth() == baseStats.OriginalMaxHealth && baseStats.OriginalMaxHealth != baseStats.ScaledMaxHealth) ||
-                                     (creature->GetFloatValue(UNIT_FIELD_MINDAMAGE) <= baseStats.MinDmg * 1.05f && baseStats.ScaledMinDmg > baseStats.MinDmg * 1.1f) ||
-                                     (!creature->IsTrigger() && creature->GetLevel() == baseStats.SpawnLevel && creature->GetLevel() < BaseLevel))
+                            if (baseStats.Entry != creature->GetCreatureTemplate()->Entry ||
+                                (creature->GetMaxHealth() == baseStats.OriginalMaxHealth && baseStats.OriginalMaxHealth != baseStats.ScaledMaxHealth) ||
+                                (creature->GetFloatValue(UNIT_FIELD_MINDAMAGE) <= baseStats.MinDmg * 1.05f && baseStats.ScaledMinDmg > baseStats.MinDmg * 1.1f) ||
+                                (!creature->IsTrigger() && creature->GetLevel() == baseStats.SpawnLevel && creature->GetLevel() < BaseLevel))
                             {
                                 statsReverted = true;
                             }
                         }
                     }
 
-                    if (entryChanged)
+                    if (statsReverted)
                     {
-                        std::unique_lock<std::shared_mutex> lock(CacheMutex);
-                        scaledCreatures.erase(guid);
-                        creatureBaseStatsCache.erase(guid);
-                        isScaled = false;
-                    }
-                    else if (statsReverted)
-                    {
+                        // Never erase creatureBaseStatsCache here! Keeping the original cached baseline
+                        // guarantees that re-applying scaling after an evade/reset never double-dips.
                         std::unique_lock<std::shared_mutex> lock(CacheMutex);
                         scaledCreatures.erase(guid);
                         isScaled = false;
@@ -1167,41 +1188,7 @@ void Global_Scaling_CreatureScript::OnCreatureAddWorld(Creature* creature)
             if (cInfo)
             {
                 GlobalScaleConfig::CachedBaseStats baseStats;
-                baseStats.Entry = cInfo->Entry;
-                
-                uint32 tMinLvl = cInfo->minlevel > 0 ? cInfo->minlevel : 1;
-                baseStats.NativeLevel = tMinLvl; 
-                baseStats.SpawnLevel = creature->GetLevel(); 
-                
-                baseStats.MinDmg = creature->GetFloatValue(UNIT_FIELD_MINDAMAGE);
-                baseStats.MaxDmg = creature->GetFloatValue(UNIT_FIELD_MAXDAMAGE);
-                baseStats.MinOffHandDmg = creature->GetFloatValue(UNIT_FIELD_MINOFFHANDDAMAGE);
-                baseStats.MaxOffHandDmg = creature->GetFloatValue(UNIT_FIELD_MAXOFFHANDDAMAGE);
-                baseStats.MinRangedDmg = creature->GetFloatValue(UNIT_FIELD_MINRANGEDDAMAGE);
-                baseStats.MaxRangedDmg = creature->GetFloatValue(UNIT_FIELD_MAXRANGEDDAMAGE);
-                baseStats.MeleeAP = creature->GetUInt32Value(UNIT_FIELD_ATTACK_POWER);
-                baseStats.RangedAP = creature->GetUInt32Value(UNIT_FIELD_RANGED_ATTACK_POWER);
-                
-                baseStats.OriginalMaxHealth = creature->GetMaxHealth();
-                baseStats.ScaledMaxHealth = creature->GetMaxHealth();
-                baseStats.OriginalMaxMana = creature->GetMaxPower(POWER_MANA);
-                
-                baseStats.ScaledMinDmg = baseStats.MinDmg;
-                baseStats.OriginalArmor = creature->GetArmor(); 
-
-                for (int i = 0; i < 6; ++i)
-                    baseStats.OriginalResistances[i] = creature->GetUInt32Value(UNIT_FIELD_RESISTANCES + 1 + i);
-
-                baseStats.OriginalStats[0] = creature->GetUInt32Value(UNIT_FIELD_STAT0);
-                baseStats.OriginalStats[1] = creature->GetUInt32Value(UNIT_FIELD_STAT1);
-
-                baseStats.OriginalScale = creature->GetFloatValue(OBJECT_FIELD_SCALE_X);
-
-                baseStats.IntrinsicDmgScale = 1.0f;
-                baseStats.IntrinsicSpellScale = 1.0f;
-                baseStats.IntrinsicDoTScale = 1.0f;
-                baseStats.IntrinsicHealScale = 1.0f;
-                
+                GlobalScaleConfig::CaptureInitialBaseStats(creature, cInfo, baseStats);
                 GlobalScaleConfig::creatureBaseStatsCache[guid] = baseStats;
             }
         }
@@ -1476,7 +1463,6 @@ void Global_Scaling_UnitScript::OnUnitEnterCombat(Unit* unit, Unit*)
 
     uint64 guid = creature->GetGUID().GetRawValue();
     bool isScaled = false;
-    bool entryChanged = false;
     bool statsReverted = false;
     
     uint32 baseLvl = 80;
@@ -1493,28 +1479,20 @@ void Global_Scaling_UnitScript::OnUnitEnterCombat(Unit* unit, Unit*)
         {
             GlobalScaleConfig::CachedBaseStats const& baseStats = GlobalScaleConfig::creatureBaseStatsCache[guid];
             
-            if (baseStats.Entry != creature->GetCreatureTemplate()->Entry)
-            {
-                entryChanged = true;
-            }
-            else if ((creature->GetMaxHealth() == baseStats.OriginalMaxHealth && baseStats.OriginalMaxHealth != baseStats.ScaledMaxHealth) ||
-                     (creature->GetFloatValue(UNIT_FIELD_MINDAMAGE) <= baseStats.MinDmg * 1.05f && baseStats.ScaledMinDmg > baseStats.MinDmg * 1.1f) ||
-                     (!creature->IsTrigger() && creature->GetLevel() == baseStats.SpawnLevel && creature->GetLevel() < baseLvl))
+            if (baseStats.Entry != creature->GetCreatureTemplate()->Entry ||
+                (creature->GetMaxHealth() == baseStats.OriginalMaxHealth && baseStats.OriginalMaxHealth != baseStats.ScaledMaxHealth) ||
+                (creature->GetFloatValue(UNIT_FIELD_MINDAMAGE) <= baseStats.MinDmg * 1.05f && baseStats.ScaledMinDmg > baseStats.MinDmg * 1.1f) ||
+                (!creature->IsTrigger() && creature->GetLevel() == baseStats.SpawnLevel && creature->GetLevel() < baseLvl))
             {
                 statsReverted = true;
             }
         }
     }
 
-    if (entryChanged)
+    if (statsReverted)
     {
-        std::unique_lock<std::shared_mutex> lock(GlobalScaleConfig::CacheMutex);
-        GlobalScaleConfig::scaledCreatures.erase(guid);
-        GlobalScaleConfig::creatureBaseStatsCache.erase(guid);
-        isScaled = false;
-    }
-    else if (statsReverted)
-    {
+        // Never erase creatureBaseStatsCache here! Keeping the original cached baseline
+        // guarantees that re-applying scaling on combat pull never double-dips.
         std::unique_lock<std::shared_mutex> lock(GlobalScaleConfig::CacheMutex);
         GlobalScaleConfig::scaledCreatures.erase(guid);
         isScaled = false;
@@ -1541,8 +1519,6 @@ void Global_Scaling_UnitScript::ModifySpellDamageTaken(Unit* target, Unit* attac
 {
     if (!attacker || !target || damage <= 0) return;
 
-    // Allow self-damage scaling ONLY when an enemy hits itself with an offensive spell
-    // (e.g. Warrior Spell Reflection or Grounding Totem reflecting a boss spell back onto the boss)
     if (attacker == target)
     {
         if (!spellInfo || spellInfo->IsPositive())
@@ -1633,9 +1609,7 @@ void Global_Scaling_UnitScript::ModifySpellDamageTaken(Unit* target, Unit* attac
                 return;
         }
 
-        // Ranged/melee abilities requiring a weapon (e.g. Shoot, Throw, Concussive Shot, Wing Clip)
-        // already use the creature's scaled weapon damage inside Spell::EffectSchoolDMG
-        if (spellInfo->DmgClass == SPELL_DAMAGE_CLASS_RANGED && spellInfo->EquippedItemClass == 2) // ITEM_CLASS_WEAPON = 2
+        if (spellInfo->DmgClass == SPELL_DAMAGE_CLASS_RANGED && spellInfo->EquippedItemClass == 2)
         {
             isWeaponBasedSpell = true;
         }
@@ -1708,8 +1682,6 @@ void Global_Scaling_UnitScript::ModifyPeriodicDamageAurasTick(Unit* target, Unit
 {
     if (!attacker || !target || damage <= 0) return;
 
-    // Allow reflected DoTs (e.g. Warrior Spell Reflection reflecting Immolate back onto Jergosh)
-    // to scale to the exact same damage the boss would have dealt to the player
     if (attacker == target)
     {
         if (!spellInfo || spellInfo->IsPositive())
@@ -1854,8 +1826,6 @@ void Global_Scaling_UnitScript::ModifyHealReceived(Unit* target, Unit* healer, u
 {
     if (!healer || !target || addhealth == 0) return;
 
-    // 1. Block any heal between hostile units (e.g. a Paladin's Judgement of Light 20267 proccing on a boss
-    // when the boss damages itself with a reflected spell, while still allowing heals on friendly NPCs like Akama/pets)
     if (healer->IsHostileTo(target) || target->IsHostileTo(healer))
     {
         addhealth = 0;
@@ -1865,8 +1835,6 @@ void Global_Scaling_UnitScript::ModifyHealReceived(Unit* target, Unit* healer, u
     bool targetIsPlayerSide = GlobalScaleConfig::IsPlayerOwnedOrControlled(target);
     bool healerIsPlayerSide = GlobalScaleConfig::IsPlayerOwnedOrControlled(healer);
 
-    // 2. If a player/bot/pet is the healer (or proc source), never scale the heal,
-    // and block it if the target is a hostile creature fighting players (even if faction flags are neutral)
     if (healerIsPlayerSide)
     {
         if (!targetIsPlayerSide && !healer->IsFriendlyTo(target))
@@ -1876,9 +1844,6 @@ void Global_Scaling_UnitScript::ModifyHealReceived(Unit* target, Unit* healer, u
         return;
     }
 
-    // 3. Judgement of Light (20267), Seal of Light (20167), and Vampiric Embrace (15290):
-    // When triggered from a debuff on a boss, `healer` can be the boss itself.
-    // Block if `target` is the boss itself or an enemy of players; allow (unscaled) on players, pets, and friendly NPCs (Akama).
     if (spellInfo && (spellInfo->Id == 20267 || spellInfo->Id == 20167 || spellInfo->Id == 15290))
     {
         if (target == healer || (!targetIsPlayerSide && target->GetVictim() && GlobalScaleConfig::IsPlayerOwnedOrControlled(target->GetVictim())))
@@ -1888,13 +1853,11 @@ void Global_Scaling_UnitScript::ModifyHealReceived(Unit* target, Unit* healer, u
         return;
     }
 
-    // 4. Never scale healing received by a player, playerbot, or player pet
     if (targetIsPlayerSide)
         return;
 
     if (spellInfo)
     {
-        // Exclude percentage heals, Lay on Hands (HEAL_MAX_HEALTH), and health leech/drain life effects
         for (uint8 i = 0; i < MAX_SPELL_EFFECTS; ++i)
         {
             if (spellInfo->Effects[i].Effect == SPELL_EFFECT_HEAL_PCT ||
