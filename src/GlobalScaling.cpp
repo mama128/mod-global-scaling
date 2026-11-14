@@ -1582,7 +1582,6 @@ void Global_Scaling_UnitScript::ModifySpellDamageTaken(Unit* target, Unit* attac
     }
 
     bool isWeaponBasedSpell = false;
-    int32 weaponDmgPct = 100;
     int32 nativeSpellDmg = 0;
 
     if (spellInfo)
@@ -1614,23 +1613,16 @@ void Global_Scaling_UnitScript::ModifySpellDamageTaken(Unit* target, Unit* attac
 
             if (spellInfo->Effects[i].Effect == SPELL_EFFECT_WEAPON_DAMAGE ||
                 spellInfo->Effects[i].Effect == SPELL_EFFECT_WEAPON_DAMAGE_NOSCHOOL ||
-                spellInfo->Effects[i].Effect == SPELL_EFFECT_NORMALIZED_WEAPON_DMG)
+                spellInfo->Effects[i].Effect == SPELL_EFFECT_NORMALIZED_WEAPON_DMG ||
+                spellInfo->Effects[i].Effect == SPELL_EFFECT_WEAPON_PERCENT_DAMAGE)
             {
                 isWeaponBasedSpell = true;
-                int32 bonus = spellInfo->Effects[i].BasePoints + 1;
-                if (bonus > 0)
-                    nativeSpellDmg += bonus;
+                break;
             }
-            else if (spellInfo->Effects[i].Effect == SPELL_EFFECT_WEAPON_PERCENT_DAMAGE)
-            {
-                isWeaponBasedSpell = true;
-                int32 pct = spellInfo->Effects[i].BasePoints + 1;
-                if (pct > 0)
-                    weaponDmgPct = pct;
-            }
-            else if (spellInfo->Effects[i].Effect == SPELL_EFFECT_SCHOOL_DAMAGE ||
-                     spellInfo->Effects[i].Effect == SPELL_EFFECT_ENVIRONMENTAL_DAMAGE ||
-                     spellInfo->Effects[i].Effect == SPELL_EFFECT_HEALTH_LEECH)
+
+            if (spellInfo->Effects[i].Effect == SPELL_EFFECT_SCHOOL_DAMAGE ||
+                spellInfo->Effects[i].Effect == SPELL_EFFECT_ENVIRONMENTAL_DAMAGE ||
+                spellInfo->Effects[i].Effect == SPELL_EFFECT_HEALTH_LEECH)
             {
                 int32 bp = spellInfo->Effects[i].BasePoints + 1;
                 int32 maxBp = spellInfo->Effects[i].BasePoints + static_cast<int32>(spellInfo->Effects[i].DieSides);
@@ -1654,36 +1646,40 @@ void Global_Scaling_UnitScript::ModifySpellDamageTaken(Unit* target, Unit* attac
         }
     }
 
-    GlobalScaleConfig::CreatureScaleContext ctx = GlobalScaleConfig::GetCreatureScaleContext(creature, creature->GetCreatureTemplate());
-
-    if (!hasCustomOverride && isWeaponBasedSpell)
+    if (!hasCustomOverride)
     {
-        float weaponSpellMult = std::max(1.0f, intrinsicDmgScale) * ctx.Mults.Damage;
-
-        if (nativeSpellDmg > 0 && damage <= nativeSpellDmg * 2 && (scaledMinDmg <= 0.0f || damage < static_cast<int32>(scaledMinDmg * 0.5f)))
+        if (isWeaponBasedSpell)
         {
-            damage = static_cast<int32>(damage * weaponSpellMult);
+            if (nativeSpellDmg > 0 && damage <= nativeSpellDmg * 2 && (scaledMinDmg <= 0.0f || damage < static_cast<int32>(scaledMinDmg * 0.5f)))
+            {
+                GlobalScaleConfig::CreatureScaleContext ctx = GlobalScaleConfig::GetCreatureScaleContext(creature, creature->GetCreatureTemplate());
+                float weaponSpellMult = std::max(1.0f, intrinsicDmgScale) * ctx.Mults.Damage;
+                damage = static_cast<int32>(damage * weaponSpellMult);
+            }
+            else if (scaledMinDmg > 50.0f)
+            {
+                float effMax = std::max(scaledMinDmg + 1.0f, scaledMaxDmg);
+                if (damage > static_cast<int32>(effMax * 1.35f))
+                {
+                    damage = static_cast<int32>(frand(scaledMinDmg, effMax));
+                }
+            }
             return;
         }
 
-        if (scaledMinDmg > 50.0f)
+        if (scaledMinDmg > 200.0f && nativeSpellDmg < static_cast<int32>(scaledMinDmg * 0.25f) && damage >= static_cast<int32>(scaledMinDmg * 0.5f))
         {
-            float effMax = std::max(scaledMinDmg + 1.0f, scaledMaxDmg);
-            float rolledWeaponDmg = frand(scaledMinDmg, effMax) * (static_cast<float>(weaponDmgPct) / 100.0f);
-            float bonusDmg = static_cast<float>(nativeSpellDmg) * weaponSpellMult;
-            int32 expectedMaxAllowed = static_cast<int32>((effMax * (static_cast<float>(weaponDmgPct) / 100.0f) + bonusDmg) * 1.35f);
-
-            if (damage > expectedMaxAllowed)
-            {
-                damage = static_cast<int32>(rolledWeaponDmg + bonusDmg);
-            }
+            return;
         }
-        return;
     }
 
-    // Direct non-weapon spells scale strictly with Spell multipliers (never inheriting melee Damage)
-    float dynamicScale = std::max(1.0f, intrinsicSpellScale);
-    float rankMult = ctx.Mults.Spell;
+    bool isPoisonOrPhysical = spellInfo &&
+        (spellInfo->Dispel == DISPEL_POISON || (spellInfo->SchoolMask & SPELL_SCHOOL_MASK_NORMAL) != 0);
+
+    GlobalScaleConfig::CreatureScaleContext ctx = GlobalScaleConfig::GetCreatureScaleContext(creature, creature->GetCreatureTemplate());
+    float baseIntrinsic = isPoisonOrPhysical ? std::max(intrinsicSpellScale, intrinsicDmgScale) : intrinsicSpellScale;
+    float dynamicScale = std::max(1.0f, baseIntrinsic);
+    float rankMult = isPoisonOrPhysical ? std::max(ctx.Mults.Spell, ctx.Mults.Damage) : ctx.Mults.Spell;
     float totalSpellMult = hasCustomOverride ? customSpellMult : (dynamicScale * rankMult);
 
     if (totalSpellMult != 1.0f)
