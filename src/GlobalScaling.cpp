@@ -361,7 +361,7 @@ namespace GlobalScaleConfig
             {543, 0}, {543, 1}, {542, 0}, {542, 1}, {540, 0}, {540, 1}, {547, 0}, {547, 1}, {546, 0}, {546, 1}, {545, 0}, {545, 1}, {557, 0}, {557, 1}, {558, 0}, {558, 1}, {556, 0}, {556, 1}, {555, 0}, {555, 1}, {554, 0}, {554, 1}, {553, 0}, {553, 1}, {552, 0}, {552, 1}, {560, 0}, {560, 1}, {269, 0}, {269, 1}, {585, 0}, {585, 1},
             {532, 0}, {568, 0}, {565, 1}, {544, 1}, {548, 1}, {550, 1}, {534, 1}, {564, 1}, {580, 1},
             {574, 0}, {574, 1}, {576, 0}, {576, 1}, {601, 0}, {601, 1}, {619, 0}, {619, 1}, {608, 0}, {608, 1}, {600, 0}, {600, 1}, {604, 0}, {604, 1}, {599, 0}, {599, 1}, {602, 0}, {602, 1}, {575, 0}, {575, 1}, {578, 0}, {578, 1}, {595, 0}, {595, 1}, {650, 0}, {650, 1}, {632, 0}, {632, 1}, {658, 0}, {658, 1}, {668, 0}, {668, 1},
-            {533, 0}, {533, 1}, {590, 0}, {590, 1}, {615, 0}, {615, 1}, {616, 0}, {616, 1}, {624, 0}, {624, 1}, {603, 0}, {603, 1}, {249, 0}, {249, 1},
+            {533, 0}, {533, 1}, {615, 0}, {615, 1}, {616, 0}, {616, 1}, {624, 0}, {624, 1}, {603, 0}, {603, 1}, {249, 0}, {249, 1},
             {649, 0}, {649, 1}, {649, 2}, {649, 3}, {631, 0}, {631, 1}, {631, 2}, {631, 3}, {724, 0}, {724, 1}, {724, 2}, {724, 3}
         };
 
@@ -484,7 +484,10 @@ namespace GlobalScaleConfig
         return false;
     }
 
-    // Safely captures baseline stats only when the creature is at its unscaled spawn state
+    // Safely captures baseline stats at spawn.
+    // If an NPC summon was spawned at its master's scaled level (e.g. level 81 instead of 20),
+    // we reset it to its true native level via creature->SelectLevel() first so we capture
+    // its authentic unscaled database stats (e.g. 432 HP at level 20 instead of 6739 HP at level 81).
     void CaptureInitialBaseStats(Creature* creature, CreatureTemplate const* cInfo, CachedBaseStats& baseStats)
     {
         baseStats.Entry = cInfo->Entry;
@@ -494,7 +497,13 @@ namespace GlobalScaleConfig
         baseStats.NativeLevel = tMinLvl;
 
         uint32 curLvl = creature->GetLevel();
-        baseStats.SpawnLevel = (curLvl > tMaxLvl && tMaxLvl < 80) ? tMaxLvl : curLvl;
+        if ((curLvl < tMinLvl || curLvl > tMaxLvl) && tMaxLvl < 80 && !creature->IsTrigger())
+        {
+            creature->SelectLevel();
+            curLvl = creature->GetLevel();
+        }
+
+        baseStats.SpawnLevel = std::clamp<uint32>(curLvl, tMinLvl, tMaxLvl);
 
         baseStats.MinDmg = creature->GetFloatValue(UNIT_FIELD_MINDAMAGE);
         baseStats.MaxDmg = creature->GetFloatValue(UNIT_FIELD_MAXDAMAGE);
@@ -732,8 +741,6 @@ namespace GlobalScaleConfig
             
             if (it != creatureBaseStatsCache.end() && it->second.Entry == cInfo->Entry)
             {
-                // Anti-Double-Dip Lock: If the creature was already cached, NEVER overwrite OriginalMaxHealth or MinDmg
-                // with its current (potentially already scaled) values.
                 alreadyScaled = (scaledCreatures.count(creatureGuid) > 0);
                 if (!alreadyScaled)
                     scaledCreatures.insert(creatureGuid);
@@ -742,7 +749,6 @@ namespace GlobalScaleConfig
             }
             else if (it != creatureBaseStatsCache.end() && it->second.Entry != cInfo->Entry)
             {
-                // Entry changed (e.g. phase transition / morph): only recapture if the creature is at its native level
                 uint32 tMaxLvl = cInfo->maxlevel >= cInfo->minlevel ? cInfo->maxlevel : cInfo->minlevel;
                 if (creature->GetLevel() <= tMaxLvl || tMaxLvl >= 80)
                 {
@@ -751,7 +757,6 @@ namespace GlobalScaleConfig
                 }
                 else
                 {
-                    // Creature kept scaled stats across Entry change: preserve original unscaled baseline
                     baseStats = it->second;
                     baseStats.Entry = cInfo->Entry;
                     baseStats.NativeLevel = cInfo->minlevel > 0 ? cInfo->minlevel : 1;
@@ -774,20 +779,14 @@ namespace GlobalScaleConfig
             targetLevel = static_cast<int32>(baseStats.SpawnLevel);
         }
 
-        uint32 currentSpawnLevel = baseStats.SpawnLevel;
-
         bool isSummon = creature->IsSummon() || creature->IsPet() || creature->IsGuardian();
         bool isTrigger = creature->IsTrigger() || ((cInfo->flags_extra & 0x00000080) != 0);
 
+        // Because CaptureInitialBaseStats resets any over-leveled summon back to its true database level
+        // via creature->SelectLevel(), all creatures (including summons) scale cleanly from their true NativeLevel.
         float hpNativeLevel = static_cast<float>(baseStats.NativeLevel);
         float dmgNativeLevel = static_cast<float>(baseStats.NativeLevel);
         float spellNativeLevel = static_cast<float>(baseStats.NativeLevel);
-
-        if (isSummon)
-        {
-            uint32 hpBaseline = currentSpawnLevel > baseStats.NativeLevel ? currentSpawnLevel : baseStats.NativeLevel;
-            hpNativeLevel = static_cast<float>(hpBaseline);
-        }
 
         if (hpNativeLevel < MinNativeLevel)
         {
@@ -855,12 +854,6 @@ namespace GlobalScaleConfig
         float intrinsicManaScale  = std::pow(hpLevelRatio, ctx.Exponents.Mana) * catchUpMod;
         float intrinsicDmgScale   = std::pow(dmgLevelRatio, ctx.Exponents.Damage) * catchUpMod;
         float intrinsicArmorScale = std::pow(hpLevelRatio, ctx.Exponents.Armor);
-
-        if (isSummon && currentSpawnLevel > baseStats.NativeLevel)
-        {
-            float coreLinearFactor = std::max<float>(1.0f, static_cast<float>(currentSpawnLevel) / std::max<float>(1.0f, static_cast<float>(baseStats.NativeLevel)));
-            intrinsicDmgScale = std::max<float>(1.0f, intrinsicDmgScale / coreLinearFactor);
-        }
         
         float intrinsicSpellScale = std::pow(spellLevelRatio, ctx.Exponents.Spell) * catchUpMod;
         float intrinsicDoTScale   = std::pow(spellLevelRatio, ctx.Exponents.DoT) * catchUpMod;
@@ -1105,8 +1098,6 @@ namespace GlobalScaleConfig
 
                     if (statsReverted)
                     {
-                        // Never erase creatureBaseStatsCache here! Keeping the original cached baseline
-                        // guarantees that re-applying scaling after an evade/reset never double-dips.
                         std::unique_lock<std::shared_mutex> lock(CacheMutex);
                         scaledCreatures.erase(guid);
                         isScaled = false;
@@ -1178,22 +1169,6 @@ void Global_Scaling_CreatureScript::OnCreatureAddWorld(Creature* creature)
 
     GlobalScaleConfig::EnsureConfigLoaded(); 
 
-    uint64 guid = creature->GetGUID().GetRawValue();
-    {
-        std::unique_lock<std::shared_mutex> lock(GlobalScaleConfig::CacheMutex);
-        if (GlobalScaleConfig::scaledCreatures.count(guid) == 0 && 
-            GlobalScaleConfig::creatureBaseStatsCache.find(guid) == GlobalScaleConfig::creatureBaseStatsCache.end())
-        {
-            CreatureTemplate const* cInfo = creature->GetCreatureTemplate();
-            if (cInfo)
-            {
-                GlobalScaleConfig::CachedBaseStats baseStats;
-                GlobalScaleConfig::CaptureInitialBaseStats(creature, cInfo, baseStats);
-                GlobalScaleConfig::creatureBaseStatsCache[guid] = baseStats;
-            }
-        }
-    }
-
     uint32 mapId = creature->GetMap()->GetId();
     bool isRaid = creature->GetMap()->IsRaid() && (mapId != 229);
     bool isDungeon = !isRaid && (creature->GetMap()->IsNonRaidDungeon() || mapId == 229);
@@ -1210,17 +1185,28 @@ void Global_Scaling_CreatureScript::OnCreatureAddWorld(Creature* creature)
     if (isDungeon && !affectDungeons) return;
     if (isRaid && !affectRaids) return;
 
-    if (creature->IsInWorld() && creature->IsAlive() && !creature->isDead())
+    bool isSummon = creature->IsSummon() || creature->IsPet() || creature->IsGuardian() || creature->IsTrigger() || !creature->GetCharmerOrOwnerGUID().IsEmpty();
+
+    if (!isSummon && creature->IsInWorld() && creature->IsAlive() && !creature->isDead())
     {
+        uint64 guid = creature->GetGUID().GetRawValue();
+        {
+            std::unique_lock<std::shared_mutex> lock(GlobalScaleConfig::CacheMutex);
+            if (GlobalScaleConfig::scaledCreatures.count(guid) == 0 && 
+                GlobalScaleConfig::creatureBaseStatsCache.find(guid) == GlobalScaleConfig::creatureBaseStatsCache.end())
+            {
+                if (CreatureTemplate const* cInfo = creature->GetCreatureTemplate())
+                {
+                    GlobalScaleConfig::CachedBaseStats baseStats;
+                    GlobalScaleConfig::CaptureInitialBaseStats(creature, cInfo, baseStats);
+                    GlobalScaleConfig::creatureBaseStatsCache[guid] = baseStats;
+                }
+            }
+        }
         GlobalScaleConfig::ApplyScalingToCreature(creature, false);
     }
 
-    bool isSummon = creature->IsSummon() || creature->IsPet() || creature->IsGuardian() || creature->IsTrigger() || !creature->GetCharmerOrOwnerGUID().IsEmpty();
-
-    uint32 delay = (isDungeon || isRaid) ? instanceDelay : 100;
-
-    if (isSummon || creature->IsInCombat())
-        delay = 250;
+    uint32 delay = (isSummon || creature->IsInCombat()) ? 250 : ((isDungeon || isRaid) ? instanceDelay : 100);
 
     creature->m_Events.AddEvent(new GlobalScalingBasicEvent(
         [creature]()
@@ -1491,8 +1477,6 @@ void Global_Scaling_UnitScript::OnUnitEnterCombat(Unit* unit, Unit*)
 
     if (statsReverted)
     {
-        // Never erase creatureBaseStatsCache here! Keeping the original cached baseline
-        // guarantees that re-applying scaling on combat pull never double-dips.
         std::unique_lock<std::shared_mutex> lock(GlobalScaleConfig::CacheMutex);
         GlobalScaleConfig::scaledCreatures.erase(guid);
         isScaled = false;
@@ -1609,7 +1593,10 @@ void Global_Scaling_UnitScript::ModifySpellDamageTaken(Unit* target, Unit* attac
                 return;
         }
 
-        if (spellInfo->DmgClass == SPELL_DAMAGE_CLASS_RANGED && spellInfo->EquippedItemClass == 2)
+        // In AzerothCore (Spell::EffectSchoolDMG), ANY spell with DmgClass == SPELL_DAMAGE_CLASS_RANGED (3)
+        // or SPELL_DAMAGE_CLASS_MELEE (2) (even with EquippedItemClass == -1 like Poisoned Harpoon 5208)
+        // ALREADY adds the creature's scaled weapon damage (BASE_ATTACK or RANGED_ATTACK) to `damage`.
+        if (spellInfo->DmgClass == SPELL_DAMAGE_CLASS_RANGED || spellInfo->DmgClass == SPELL_DAMAGE_CLASS_MELEE)
         {
             isWeaponBasedSpell = true;
         }
@@ -1631,7 +1618,6 @@ void Global_Scaling_UnitScript::ModifySpellDamageTaken(Unit* target, Unit* attac
                 spellInfo->Effects[i].Effect == SPELL_EFFECT_WEAPON_PERCENT_DAMAGE)
             {
                 isWeaponBasedSpell = true;
-                break;
             }
 
             if (spellInfo->Effects[i].Effect == SPELL_EFFECT_SCHOOL_DAMAGE ||
@@ -1660,16 +1646,31 @@ void Global_Scaling_UnitScript::ModifySpellDamageTaken(Unit* target, Unit* attac
         }
     }
 
-    bool isPoisonOrPhysical = !isWeaponBasedSpell && spellInfo &&
+    GlobalScaleConfig::CreatureScaleContext ctx = GlobalScaleConfig::GetCreatureScaleContext(creature, creature->GetCreatureTemplate());
+
+    if (isWeaponBasedSpell && !hasCustomOverride)
+    {
+        // If it is a melee/ranged DmgClass spell that ONLY has flat BasePoints (no weapon damage added by core),
+        // then `damage` will be close to `nativeSpellDmg`: scale it normally.
+        // Otherwise (like Poisoned Harpoon 5208 where `damage` already contains ~3500 scaled weapon damage + 30 flat),
+        // leave `damage` as-is so it never double-dips.
+        if (nativeSpellDmg > 0 && damage <= nativeSpellDmg * 2)
+        {
+            float weaponSpellMult = std::max(1.0f, intrinsicDmgScale) * ctx.Mults.Damage;
+            damage = static_cast<int32>(damage * weaponSpellMult);
+        }
+        return;
+    }
+
+    bool isPoisonOrPhysical = spellInfo &&
         (spellInfo->Dispel == DISPEL_POISON || (spellInfo->SchoolMask & SPELL_SCHOOL_MASK_NORMAL) != 0);
 
-    GlobalScaleConfig::CreatureScaleContext ctx = GlobalScaleConfig::GetCreatureScaleContext(creature, creature->GetCreatureTemplate());
     float baseIntrinsic = isPoisonOrPhysical ? std::max(intrinsicSpellScale, intrinsicDmgScale) : intrinsicSpellScale;
-    float dynamicScale = isWeaponBasedSpell ? 1.0f : std::max(1.0f, baseIntrinsic);
+    float dynamicScale = std::max(1.0f, baseIntrinsic);
     float rankMult = isPoisonOrPhysical ? std::max(ctx.Mults.Spell, ctx.Mults.Damage) : ctx.Mults.Spell;
     float totalSpellMult = hasCustomOverride ? customSpellMult : (dynamicScale * rankMult);
 
-    if ((!isWeaponBasedSpell || hasCustomOverride) && totalSpellMult != 1.0f)
+    if (totalSpellMult != 1.0f)
     {
         if (!hasCustomOverride && nativeSpellDmg > 5 && damage > nativeSpellDmg * 2)
             damage = static_cast<int32>(nativeSpellDmg * totalSpellMult);
@@ -1769,15 +1770,6 @@ void Global_Scaling_UnitScript::ModifyPeriodicDamageAurasTick(Unit* target, Unit
                 return;
             }
 
-            if (spellInfo->Effects[i].Effect == SPELL_EFFECT_WEAPON_DAMAGE ||
-                spellInfo->Effects[i].Effect == SPELL_EFFECT_WEAPON_DAMAGE_NOSCHOOL ||
-                spellInfo->Effects[i].Effect == SPELL_EFFECT_NORMALIZED_WEAPON_DMG ||
-                spellInfo->Effects[i].Effect == SPELL_EFFECT_WEAPON_PERCENT_DAMAGE)
-            {
-                isWeaponBasedSpell = true;
-                break;
-            }
-
             if (spellInfo->Effects[i].ApplyAuraName == SPELL_AURA_PERIODIC_DAMAGE ||
                 spellInfo->Effects[i].ApplyAuraName == SPELL_AURA_PERIODIC_LEECH)
             {
@@ -1804,16 +1796,19 @@ void Global_Scaling_UnitScript::ModifyPeriodicDamageAurasTick(Unit* target, Unit
         }
     }
 
-    bool isPoisonOrBleed = !isWeaponBasedSpell && spellInfo &&
+    if (isWeaponBasedSpell && !hasCustomOverride)
+        return;
+
+    bool isPoisonOrBleed = spellInfo &&
         (spellInfo->Dispel == DISPEL_POISON || (spellInfo->SchoolMask & SPELL_SCHOOL_MASK_NORMAL) != 0);
 
     GlobalScaleConfig::CreatureScaleContext ctx = GlobalScaleConfig::GetCreatureScaleContext(creature, creature->GetCreatureTemplate());
     float baseIntrinsic = isPoisonOrBleed ? std::max(intrinsicDoTScale, intrinsicDmgScale) : intrinsicDoTScale;
-    float dynamicScale = isWeaponBasedSpell ? 1.0f : std::max(1.0f, baseIntrinsic);
+    float dynamicScale = std::max(1.0f, baseIntrinsic);
     float rankMult = isPoisonOrBleed ? std::max({ ctx.Mults.DoT, ctx.Mults.Damage, ctx.Mults.Spell }) : ctx.Mults.DoT;
     float totalSpellMult = hasCustomOverride ? customSpellMult : (dynamicScale * rankMult);
 
-    if ((!isWeaponBasedSpell || hasCustomOverride) && totalSpellMult != 1.0f)
+    if (totalSpellMult != 1.0f)
     {
         if (!hasCustomOverride && hasRealPointsPerLevel && nativeTickDmg > 0 && damage > nativeTickDmg * 2)
             damage = static_cast<uint32>(nativeTickDmg * totalSpellMult);
