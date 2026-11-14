@@ -18,7 +18,7 @@ GlobalScaling.ExcludedMaps = ""
 GlobalScaling.ExcludedCreatures = ""
 
 # Promotes untagged optional dungeon bosses & mini-bosses to BossNonSkull (Level 83 + Boss Scale)
-GlobalScaling.ForceBossCreatures = "7023,7274,7359,7603,7604,7605,7606,7607,7608,7797,13233,13596,9025,9026,9031,9041,9042,9056,9033,11143,17307,17536"
+GlobalScaling.ForceBossCreatures = "642,7023,7274,7359,7603,7604,7605,7606,7607,7608,7797,13233,13596,9025,9026,9031,9041,9042,9056,9033,11143,17307,17536"
 
 # ==============================================================================
 # CATCH-UP (LATE EXPANSION BOOST)
@@ -317,9 +317,9 @@ GlobalScaling.Instance.389.0.Rank.Trigger.DoT = 1.0
 
 # --- Map 36: The Deadmines (Normal - Diff 0) ---
 GlobalScaling.Instance.36.0.Rank.Trash.LevelBonus = 0
-GlobalScaling.Instance.36.0.Rank.Trash.HP = 6.0
+GlobalScaling.Instance.36.0.Rank.Trash.HP = 8.0
 GlobalScaling.Instance.36.0.Rank.Trash.Mana = 3.0
-GlobalScaling.Instance.36.0.Rank.Trash.Damage = 9.0
+GlobalScaling.Instance.36.0.Rank.Trash.Damage = 20.0
 GlobalScaling.Instance.36.0.Rank.Trash.Spell = 1.5
 GlobalScaling.Instance.36.0.Rank.Trash.Armor = 1.0
 GlobalScaling.Instance.36.0.Rank.Trash.Resistance = 1.0
@@ -329,7 +329,7 @@ GlobalScaling.Instance.36.0.Rank.Trash.DoT = 1.5
 GlobalScaling.Instance.36.0.Rank.Commander.LevelBonus = 1
 GlobalScaling.Instance.36.0.Rank.Commander.HP = 4.0
 GlobalScaling.Instance.36.0.Rank.Commander.Mana = 5.5
-GlobalScaling.Instance.36.0.Rank.Commander.Damage = 10.0
+GlobalScaling.Instance.36.0.Rank.Commander.Damage = 20.0
 GlobalScaling.Instance.36.0.Rank.Commander.Spell = 1.5
 GlobalScaling.Instance.36.0.Rank.Commander.Armor = 1.0
 GlobalScaling.Instance.36.0.Rank.Commander.Resistance = 1.0
@@ -337,7 +337,7 @@ GlobalScaling.Instance.36.0.Rank.Commander.Gold = 1.5
 GlobalScaling.Instance.36.0.Rank.Commander.Heal = 1.5
 GlobalScaling.Instance.36.0.Rank.Commander.DoT = 1.5
 GlobalScaling.Instance.36.0.Rank.BossNonSkull.LevelBonus = 3
-GlobalScaling.Instance.36.0.Rank.BossNonSkull.HP = 22.0
+GlobalScaling.Instance.36.0.Rank.BossNonSkull.HP = 13.5	
 GlobalScaling.Instance.36.0.Rank.BossNonSkull.Mana = 7.0
 GlobalScaling.Instance.36.0.Rank.BossNonSkull.Damage = 20.0
 GlobalScaling.Instance.36.0.Rank.BossNonSkull.Spell = 2
