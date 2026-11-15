@@ -242,7 +242,7 @@ GlobalScaling.SizeOverride.Maps.Enable = 1
 # Format: "MapID TrashScale BossScale,MapID2 TrashScale2 BossScale2"
 # Example: In Ragefire Chasm (389), trash scale is normal (1.0) but bosses are doubled (2.0) :
 # GlobalScaling.SizeOverride.Maps = "389 1.0 2.0"
-GlobalScaling.SizeOverride.Maps = "389 1.5 2, 36 1.5 2, 349 1.5 2"
+GlobalScaling.SizeOverride.Maps = "389 1.5 2, 36 1.5 2, 349 1.5 2, 36 1.5 2, 43 1.5 2"
 
 # 3. GlobalScaling.SizeOverride.Creatures
 # Description: Multiplies the visual size of a specific creature or boss (EntryID).
@@ -344,8 +344,8 @@ GlobalScaling.Instance.36.0.Rank.BossNonSkull.Spell = 2
 GlobalScaling.Instance.36.0.Rank.BossNonSkull.Armor = 1.0
 GlobalScaling.Instance.36.0.Rank.BossNonSkull.Resistance = 1.0
 GlobalScaling.Instance.36.0.Rank.BossNonSkull.Gold = 2.0
-GlobalScaling.Instance.36.0.Rank.BossNonSkull.Heal = 2
-GlobalScaling.Instance.36.0.Rank.BossNonSkull.DoT = 2
+GlobalScaling.Instance.36.0.Rank.BossNonSkull.Heal = 10
+GlobalScaling.Instance.36.0.Rank.BossNonSkull.DoT = 20
 GlobalScaling.Instance.36.0.Rank.BossSkull.LevelBonus = 3
 GlobalScaling.Instance.36.0.Rank.BossSkull.HP = 24.0
 GlobalScaling.Instance.36.0.Rank.BossSkull.Mana = 8.0
@@ -369,9 +369,9 @@ GlobalScaling.Instance.36.0.Rank.Trigger.DoT = 1.0
 
 # --- Map 43: Wailing Caverns (Normal - Diff 0) ---
 GlobalScaling.Instance.43.0.Rank.Trash.LevelBonus = 0
-GlobalScaling.Instance.43.0.Rank.Trash.HP = 6.0
+GlobalScaling.Instance.43.0.Rank.Trash.HP = 8.0
 GlobalScaling.Instance.43.0.Rank.Trash.Mana = 3.0
-GlobalScaling.Instance.43.0.Rank.Trash.Damage = 9.0
+GlobalScaling.Instance.43.0.Rank.Trash.Damage = 15.0
 GlobalScaling.Instance.43.0.Rank.Trash.Spell = 1.5
 GlobalScaling.Instance.43.0.Rank.Trash.Armor = 1.0
 GlobalScaling.Instance.43.0.Rank.Trash.Resistance = 1.0
@@ -379,25 +379,25 @@ GlobalScaling.Instance.43.0.Rank.Trash.Gold = 1.5
 GlobalScaling.Instance.43.0.Rank.Trash.Heal = 1.5
 GlobalScaling.Instance.43.0.Rank.Trash.DoT = 1.5
 GlobalScaling.Instance.43.0.Rank.Commander.LevelBonus = 1
-GlobalScaling.Instance.43.0.Rank.Commander.HP = 4.0
+GlobalScaling.Instance.43.0.Rank.Commander.HP = 5.0
 GlobalScaling.Instance.43.0.Rank.Commander.Mana = 5.5
 GlobalScaling.Instance.43.0.Rank.Commander.Damage = 10.0
-GlobalScaling.Instance.43.0.Rank.Commander.Spell = 1.5
+GlobalScaling.Instance.43.0.Rank.Commander.Spell = 6.5
 GlobalScaling.Instance.43.0.Rank.Commander.Armor = 1.0
 GlobalScaling.Instance.43.0.Rank.Commander.Resistance = 1.0
 GlobalScaling.Instance.43.0.Rank.Commander.Gold = 1.5
-GlobalScaling.Instance.43.0.Rank.Commander.Heal = 1.5
-GlobalScaling.Instance.43.0.Rank.Commander.DoT = 1.5
+GlobalScaling.Instance.43.0.Rank.Commander.Heal = 4
+GlobalScaling.Instance.43.0.Rank.Commander.DoT = 4
 GlobalScaling.Instance.43.0.Rank.BossNonSkull.LevelBonus = 3
-GlobalScaling.Instance.43.0.Rank.BossNonSkull.HP = 22.0
+GlobalScaling.Instance.43.0.Rank.BossNonSkull.HP = 28.0
 GlobalScaling.Instance.43.0.Rank.BossNonSkull.Mana = 7.0
 GlobalScaling.Instance.43.0.Rank.BossNonSkull.Damage = 20.0
-GlobalScaling.Instance.43.0.Rank.BossNonSkull.Spell = 2
+GlobalScaling.Instance.43.0.Rank.BossNonSkull.Spell = 10
 GlobalScaling.Instance.43.0.Rank.BossNonSkull.Armor = 1.0
 GlobalScaling.Instance.43.0.Rank.BossNonSkull.Resistance = 1.0
 GlobalScaling.Instance.43.0.Rank.BossNonSkull.Gold = 4.5
-GlobalScaling.Instance.43.0.Rank.BossNonSkull.Heal = 2
-GlobalScaling.Instance.43.0.Rank.BossNonSkull.DoT = 2
+GlobalScaling.Instance.43.0.Rank.BossNonSkull.Heal = 8
+GlobalScaling.Instance.43.0.Rank.BossNonSkull.DoT = 8
 GlobalScaling.Instance.43.0.Rank.BossSkull.LevelBonus = 3
 GlobalScaling.Instance.43.0.Rank.BossSkull.HP = 24.0
 GlobalScaling.Instance.43.0.Rank.BossSkull.Mana = 8.0
