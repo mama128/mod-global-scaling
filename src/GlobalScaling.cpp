@@ -1761,13 +1761,24 @@ void Global_Scaling_UnitScript::ModifyPeriodicDamageAurasTick(Unit* target, Unit
     }
 
     bool isWeaponBasedSpell = false;
+    bool isMeleeOrRangedDoT = false;
     bool hasRealPointsPerLevel = false;
     uint32 nativeTickDmg = 0;
-    
+    uint32 maxStacks = 1;
+
     if (spellInfo)
     {
         if (!hasCustomOverride && spellInfo->SpellFamilyName != SPELLFAMILY_GENERIC && nativeLevel < 70 && spellInfo->SpellLevel >= 71)
             return;
+
+        maxStacks = std::max<uint32>(1u, spellInfo->StackAmount);
+
+        if (spellInfo->DmgClass == SPELL_DAMAGE_CLASS_MELEE || spellInfo->DmgClass == SPELL_DAMAGE_CLASS_RANGED)
+            isMeleeOrRangedDoT = true;
+
+        // Warrior bleeds (Rend, Deep Wounds) already scale directly from the creature's modified weapon damage.
+        if (spellInfo->SpellFamilyName == SPELLFAMILY_WARRIOR && isMeleeOrRangedDoT)
+            isWeaponBasedSpell = true;
 
         for (uint8 i = 0; i < MAX_SPELL_EFFECTS; ++i)
         {
@@ -1804,6 +1815,13 @@ void Global_Scaling_UnitScript::ModifyPeriodicDamageAurasTick(Unit* target, Unit
                     nativeTickDmg += static_cast<uint32>(effDmg);
             }
         }
+    }
+
+    // Generic guard for melee/ranged DoTs already scaled by core weapon damage.
+    if (isMeleeOrRangedDoT && !hasRealPointsPerLevel)
+    {
+        if (nativeTickDmg == 0 || damage > nativeTickDmg * maxStacks * 2)
+            isWeaponBasedSpell = true;
     }
 
     if (isWeaponBasedSpell && !hasCustomOverride)
